@@ -6,7 +6,7 @@ import {useMemo, useState} from 'react';
 import {FiClock, FiMapPin, FiMessageCircle, FiSearch, FiShield, FiShoppingBag, FiStar, FiTruck} from 'react-icons/fi';
 
 import {calculateTrustScore, formatKwacha} from '../lib/commerceLogic';
-import {addCartItem, readCart, saveCart} from '../services/cartService';
+import {addCartItem, readMultiCart, saveMultiCart, setActiveMerchantCart} from '../services/cartService';
 import type {Product, Seller} from '../types/commerce';
 
 type StorefrontPageClientProps = {
@@ -20,7 +20,6 @@ export const StorefrontPageClient = ({merchant, initialProductId}: StorefrontPag
     merchant.products.find((product) => product.id === initialProductId) ?? null
   );
   const [message, setMessage] = useState('');
-  const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
 
   const filteredProducts = useMemo(
     () =>
@@ -30,19 +29,13 @@ export const StorefrontPageClient = ({merchant, initialProductId}: StorefrontPag
     [merchant.products, query]
   );
 
-  const addProduct = (product: Product, force = false) => {
+  const addProduct = (product: Product) => {
     if (product.available === false || product.stock < 1) {
       setMessage('This product is currently unavailable.');
       return;
     }
-    const cart = readCart();
-    if (!force && cart.merchantId && cart.merchantId !== merchant.id && cart.items.length > 0) {
-      setPendingProduct(product);
-      return;
-    }
-    saveCart(addCartItem(force ? {items: []} : cart, merchant, product));
-    setMessage(`${product.name} added to cart.`);
-    setPendingProduct(null);
+    saveMultiCart(addCartItem(readMultiCart(), merchant, product));
+    setMessage(`${product.name} added to ${merchant.name} cart.`);
   };
 
   return (
@@ -83,16 +76,6 @@ export const StorefrontPageClient = ({merchant, initialProductId}: StorefrontPag
           </div>
 
           {message ? <div className="rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">{message}</div> : null}
-          {pendingProduct ? (
-            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4">
-              <p className="font-black text-amber-950">Your cart currently contains products from another merchant. Starting a new order will clear the current cart.</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setPendingProduct(null)} className="rounded-2xl bg-white px-4 py-3 font-black">Keep cart</button>
-                <button type="button" onClick={() => addProduct(pendingProduct, true)} className="rounded-2xl bg-amber-500 px-4 py-3 font-black">Start new order</button>
-              </div>
-            </div>
-          ) : null}
-
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filteredProducts.map((product) => (
               <article key={product.id} className="overflow-hidden rounded-3xl border border-neutral-200">
@@ -120,7 +103,7 @@ export const StorefrontPageClient = ({merchant, initialProductId}: StorefrontPag
               {merchant.policies.map((policy) => <li key={policy}>{policy}</li>)}
             </ul>
             <div className="mt-4 flex gap-2">
-              <Link href="/checkout" className="flex-1 rounded-2xl bg-amber-500 px-4 py-3 text-center font-black text-neutral-950"><FiShoppingBag className="mr-2 inline" /> Cart</Link>
+              <Link href={`/checkout?merchant=${merchant.id}`} onClick={() => setActiveMerchantCart(merchant.id)} className="flex-1 rounded-2xl bg-amber-500 px-4 py-3 text-center font-black text-neutral-950"><FiShoppingBag className="mr-2 inline" /> Cart</Link>
               <Link href="/discover" className="flex-1 rounded-2xl border border-neutral-200 px-4 py-3 text-center font-black"><FiMessageCircle className="mr-2 inline" /> Assistant</Link>
             </div>
           </section>

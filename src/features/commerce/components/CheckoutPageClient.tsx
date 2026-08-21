@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {FiAlertCircle, FiCreditCard, FiPackage, FiShield, FiShoppingBag, FiTruck} from 'react-icons/fi';
 
 import {deliverySlots, initialOrders} from '../data/mockCommerce';
 import {findProduct, findSeller, formatKwacha} from '../lib/commerceLogic';
-import {clearCart, readCart, saveCart, updateCartQuantity} from '../services/cartService';
+import {clearCart, readCart, updateCartQuantity} from '../services/cartService';
 import {mockYangoProvider} from '../services/mockYangoProvider';
 import {mockPaymentProvider} from '../services/mockPaymentProvider';
 import {createProtectedOrder, readOrders, saveOrders} from '../services/orderService';
@@ -24,7 +24,9 @@ const savedAddress: DeliveryAddress = {
 
 export const CheckoutPageClient = () => {
   const router = useRouter();
-  const [cart, setCart] = useState(readCart);
+  const searchParams = useSearchParams();
+  const merchantParam = searchParams.get('merchant') ?? undefined;
+  const [cart, setCart] = useState(() => readCart(merchantParam));
   const [step, setStep] = useState(0);
   const [method, setMethod] = useState<FulfilmentMethod>('delivery');
   const [address, setAddress] = useState<DeliveryAddress>(savedAddress);
@@ -59,7 +61,6 @@ export const CheckoutPageClient = () => {
   const updateQuantity = (productId: string, quantity: number) => {
     const nextCart = updateCartQuantity(cart, productId, quantity);
     setCart(nextCart);
-    saveCart(nextCart);
   };
 
   const pay = async () => {
@@ -95,7 +96,7 @@ export const CheckoutPageClient = () => {
     const order = createProtectedOrder({cart, merchant, fulfilmentMethod: method, deliveryAddress: method === 'delivery' ? address : undefined, deliverySlotId: slotId, pricing, payment: result});
     const nextOrders = [order, ...readOrders(initialOrders)];
     saveOrders(nextOrders);
-    saveCart(clearCart());
+    clearCart(merchant.id);
     setLoading(false);
     router.push(`/orders/${order.id}?confirmed=1`);
   };

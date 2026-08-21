@@ -1,22 +1,29 @@
 # AICOS Zambia Commerce Prototype
 
-This is a working customer-facing prototype for the AI Commerce Operating System described in the project brief, feature inspiration notes, and PDF specification. It focuses on proving that a customer can search for a local need, discover trusted merchants, browse a store, add products to a single-merchant cart, complete simulated checkout, and track fulfilment without leaving the platform.
+This is a working prototype for the AI Commerce Operating System described in the project brief, feature inspiration notes, and PDF specification. It focuses on proving that customers and merchants can enter the platform through simulated login/onboarding, search for local needs, discover trusted merchants, browse stores, create protected orders, and manage fulfilment without leaving the web app.
 
 ## Main Customer Tabs
 
-- `/discover` - Full-screen responsive customer workspace with Discover, Chat, Orders, and Profile tabs.
+- `/discover` - Full-screen responsive customer workspace with simulated login/onboarding, Discover, Chat, Orders, Profile, and logout.
 - `/merchants/[merchantId]` - Storefront, trust details, policies, product browsing, product detail modal, and add-to-cart.
 - `/checkout` - Cart review, fulfilment method, address, slot selection, simulated payment, and order creation.
 - `/orders/[orderId]` - Confirmation, payment-protection status, customer timeline, support issue entry, and fulfilment simulation.
-- `/merchant/orders` - Lightweight merchant order-management view consuming customer-created prototype orders.
+- `/merchant/orders` - Merchant login/onboarding and order-management view consuming customer-created prototype orders.
 
 ## What the Prototype Does
 
+- Simulated customer and merchant login/onboarding flows with role switching and logout.
 - Mobile-first customer discovery with realistic Zambian merchant examples.
+- Category discovery cards with icon placeholders, active states, and hover transformation effects.
 - Rule-based conversational ordering for availability, pricing, delivery, trust, and escrow questions.
+- Floating cart button with total quantity count and a merchant-by-merchant saved cart drawer.
+- Multi-store cart progress so customers can keep separate carts for different merchants and fulfil each merchant order without losing the others.
+- Mock recent merchant conversations in the customer Chat tab, with list-first inbox behaviour and full-screen conversation detail after selection.
 - Cart, delivery slot selection, pickup/delivery mode, and simulated checkout.
 - Escrow-style order creation with delivery PIN and protected payment state.
+- Customer Orders tab with list-first recent orders, full-screen order detail after selection, tracking links, and a placeholder help button for future support/dispute flows.
 - Customer-facing fulfilment workspace with simulated live updates, delivery progress, completion confirmation, escrow release, receipt state, and support reporting.
+- Merchant-facing workspace with dashboard metrics, fulfilment queue, inventory signals, support preview, simulated order actions, and logout.
 - Simulated loading overlays, progress animations, active timeline states, and smooth tab/screen transitions.
 - Dedicated adapters/services for search parsing, discovery ranking, cart persistence, mock Yango delivery quotes/slots, simulated payments, price breakdowns, and local order persistence.
 - Alata headings and Google Sans body copy configured through `next/font/google` with `font-display: swap`.
@@ -42,6 +49,18 @@ Run tests:
 npm test
 ```
 
+## Vercel Deployment Notes
+
+The app is now structured as a standard Next.js project at the repository root. In Vercel, use:
+
+- Framework Preset: `Next.js`
+- Root Directory: `./` or blank/default
+- Build Command: default or `npm run build`
+- Install Command: default or `npm install`
+- Output Directory: blank/default
+
+Do not set the Output Directory to `public`; `public/` is only for static assets in this Next.js app.
+
 ## Folder and File Responsibilities
 
 ### `src/app/`
@@ -62,16 +81,18 @@ npm test
 
 Main customer commerce feature area. It keeps UI, mock data, logic, and shared types separate so the mock implementation can later be replaced by real APIs.
 
-- `components/DiscoveryPageClient.tsx` - Full-screen customer tab shell with discovery search, mock merchant chats, order summaries, customer profile, loading/empty/error states, merchant results, product results, and add-to-cart handling.
+- `components/AuthFlow.tsx` - Reusable simulated login/onboarding experience shared by customer and merchant entry points. Captures role, name, username, mobile number, business name where needed, and onboarding state.
+- `components/DiscoveryPageClient.tsx` - Full-screen customer tab shell with login/onboarding gate, logout, floating multi-store cart drawer, discovery search, category cards, mock merchant inbox/detail, order list/detail, customer profile, loading/empty/error states, merchant results, product results, and add-to-cart handling.
 - `components/StorefrontPageClient.tsx` - Merchant storefront, trust information, product search, product detail modal, policies, and cart entry.
 - `components/CheckoutPageClient.tsx` - Step-based checkout for cart review, fulfilment, address, slots, payment, review, and order creation.
 - `components/OrderTrackingPageClient.tsx` - Order confirmation, readable customer timeline, simulated updates, completion PIN, protection status, and issue reporting.
-- `components/MerchantOrdersPageClient.tsx` - Merchant order list that reads customer-created orders and simulates acceptance, rejection, and fulfilment status changes.
-- `components/CustomerInstagramApp.tsx` - Earlier four-tab customer surface retained as a reference component, no longer used by the main route.
+- `components/MerchantOrdersPageClient.tsx` - Merchant login/onboarding gate plus dashboard, fulfilment queue, inventory signal view, support preview, and simulated acceptance, rejection, and fulfilment status changes.
+- `data/customerExperience.ts` - Replaceable customer UX data for suggestions, category cards, filter locations, profile seed fields, and recent conversations.
+- `data/merchantExperience.ts` - Replaceable merchant dashboard seed data for metrics, low-stock threshold, and support queue examples.
 - `data/mockCommerce.ts` - Mock sellers, products, delivery slots, and initial orders used by the customer experience.
 - `lib/commerceLogic.ts` - Reusable business functions for currency formatting, seller/product lookup, cart totals, trust scoring, order status progression, order creation, and chatbot replies.
 - `services/searchService.ts` - Deterministic keyword/natural-language parser plus local ranking for products and merchants.
-- `services/cartService.ts` - Local-storage cart state, single-merchant cart structure, add/update/clear operations.
+- `services/cartService.ts` - Local-storage multi-merchant cart store, merchant cart groups, active merchant selection for checkout, item counts, add/update/clear operations, and documented database/API swap points.
 - `services/pricingService.ts` - Product subtotal, delivery fee, buyer-protection fee, discount, and final total calculations.
 - `services/mockYangoProvider.ts` - Mock delivery-provider adapter for quotes, compatible slots, booking, and status.
 - `services/mockPaymentProvider.ts` - Simulated payment adapter with mobile money/card/pay-on-pickup success and failure paths.
@@ -83,8 +104,6 @@ Main customer commerce feature area. It keeps UI, mock data, logic, and shared t
 Reusable TypeScript components used by secondary routes and the hub.
 
 - `auth/AuthFormFields.tsx` - Shared authentication form fields for `/auth`.
-- `layout/PhoneFrame.tsx` - Reusable phone-frame layout component.
-- `layout/OverlaySheet.tsx` - Reusable overlay/sheet component.
 - `pages/AuthExperience.tsx` - Auth/onboarding preview experience.
 - `pages/HubLandingPage.tsx` - Explanatory project hub page.
 - `ui/Button.tsx`, `ui/Card.tsx`, `ui/IconButton.tsx`, `ui/InputField.tsx`, `ui/SectionHeading.tsx` - Shared UI primitives.
@@ -133,7 +152,29 @@ Shared support for the retained hub and auth routes.
 - `mockYangoProvider.getQuote/getAvailableSlots()` - Simulates delivery compatibility and slot availability.
 - `mockPaymentProvider.pay()` - Simulates payment success, failure, and pay-on-pickup.
 - `createProtectedOrder(input)` - Creates the checkout order after simulated payment succeeds.
+- `readMultiCart()` and `saveMultiCart(cart)` - Read and persist the multi-store cart shape. These are the primary future swap points for a real authenticated cart API.
+- `addCartItem(cart, merchant, product)` - Adds products to the correct merchant cart group while preserving carts from other stores.
+- `getCartItemCount(cart)` and `getMerchantCartQuantity(group)` - Power the floating cart badge and merchant grouped cart drawer.
+- `setActiveMerchantCart(merchantId)` - Marks which merchant group checkout should process.
+
+## Current UX Progress
+
+- Customer entry: `/discover` opens with a simulated customer login/onboarding flow. Selecting merchant redirects into the merchant workspace.
+- Merchant entry: `/merchant/orders` opens with a simulated merchant login/onboarding flow. Selecting customer redirects back to the customer app.
+- Discover: search, suggestions, filters, category cards, merchant cards, product cards, and multi-merchant add-to-cart are working against local mock data.
+- Cart: the bottom-right floating cart button opens saved carts grouped by merchant. Each merchant group can resume checkout independently while other store carts remain saved.
+- Chat: only the recent chat list is displayed first. Selecting a chat opens a full-screen conversation detail within the app shell.
+- Orders: only the recent order list is displayed first. Selecting an order opens a full-screen detail view within the app shell. The help button is intentionally a placeholder for now.
+- Profile: customer personal information and order history are shown from the simulated session and mock order state.
+- Merchant workspace: dashboard metrics, order queue, inventory view, and support preview are implemented as a scaffold for future deeper merchant tools.
+
+## Data and Future Backend Swap Points
+
+- Static catalog data currently lives in TypeScript data files under `src/features/commerce/data/`. These files are intentionally shaped like repository seed data so they can later be replaced by database reads or API responses.
+- Customer session, cart, and orders are still local browser state. The service functions in `services/cartService.ts` and `services/orderService.ts` are the intended boundaries for future authenticated API calls.
+- Mock payment and delivery adapters live behind provider-style service files. Production integrations should replace those files without forcing UI components to know payment or courier implementation details.
+- Components now consume data through service/data modules instead of defining most UX content inline. This improves cohesion and makes the prototype easier to grow.
 
 ## Prototype Boundaries
 
-The app is frontend-only. Payments, AI parsing, fraud scoring, identity verification, courier tracking, disputes, merchant order management, and customer memory are simulated with local state and mock data. Real Yango, real payment processing, real escrow, production AI credentials, and a backend order database are still required for production.
+The app is frontend-only. Authentication, onboarding, payments, AI parsing, fraud scoring, identity verification, courier tracking, disputes, merchant order management, customer memory, and help/support routing are simulated with local state and mock data. Real auth, real Yango, real payment processing, real escrow, production AI credentials, and a backend order database are still required for production.

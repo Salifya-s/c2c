@@ -79,6 +79,17 @@ export type CartState = {
   items: CartLine[];
 };
 
+export type MerchantCartGroup = {
+  merchantId: string;
+  items: CartLine[];
+  updatedAt: string;
+};
+
+export type MultiMerchantCartState = {
+  activeMerchantId?: string;
+  groups: MerchantCartGroup[];
+};
+
 export type ChatMessage = {
   id: string;
   role: 'bot' | 'customer' | 'system';

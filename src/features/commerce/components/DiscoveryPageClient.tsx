@@ -5,11 +5,9 @@ import type {Dispatch, ReactNode, SetStateAction} from 'react';
 import {useMemo, useState} from 'react';
 import {
   FiAlertCircle,
+  FiArrowLeft,
   FiChevronDown,
-  FiChevronUp,
   FiClock,
-  FiGift,
-  FiGrid,
   FiHome,
   FiLogOut,
   FiMessageCircle,
@@ -19,37 +17,20 @@ import {
   FiShoppingBag,
   FiStar,
   FiTruck,
-  FiUser,
-  FiZap
+  FiUser
 } from 'react-icons/fi';
 
+import {customerFilterLocations, customerProfileSeed, discoveryCategoryCards, discoverySuggestions, recentConversations} from '../data/customerExperience';
 import {initialOrders, sellers} from '../data/mockCommerce';
 import {calculateTrustScore, findProduct, findSeller, formatKwacha, getStatusLabel} from '../lib/commerceLogic';
-import {addCartItem, readCart, saveCart} from '../services/cartService';
+import {addCartItem, getCartItemCount, getMerchantCartQuantity, readMultiCart, saveMultiCart, setActiveMerchantCart} from '../services/cartService';
 import {readOrders} from '../services/orderService';
 import {searchCommerce} from '../services/searchService';
-import type {ChatMessage, DiscoveryFilters, ProductResult} from '../types/commerce';
+import type {DiscoveryFilters, MultiMerchantCartState, ProductResult} from '../types/commerce';
 import {AuthFlow, type CommerceSession} from './AuthFlow';
 
 type CustomerTab = 'discover' | 'chat' | 'orders' | 'profile';
 
-const suggestions = [
-  'Birthday cake under K500',
-  'Chicken and chips near me',
-  'Tailor available this week',
-  'Beauty products delivered today'
-];
-
-const categoryCards: Array<{id: string; label: string; helper: string; Icon: typeof FiGrid; accent: string}> = [
-  {id: 'Bakery', label: 'Bakery', helper: 'Cakes, cupcakes, breakfast bakes', Icon: FiGift, accent: 'bg-pink-50 text-pink-700'},
-  {id: 'Lunch', label: 'Lunch', helper: 'Prepared meals ready today', Icon: FiShoppingBag, accent: 'bg-amber-50 text-amber-700'},
-  {id: 'Groceries', label: 'Groceries', helper: 'Fresh produce and household basics', Icon: FiGrid, accent: 'bg-emerald-50 text-emerald-700'},
-  {id: 'Fashion', label: 'Fashion', helper: 'Clothing, shoes, custom pieces', Icon: FiUser, accent: 'bg-sky-50 text-sky-700'},
-  {id: 'Beauty', label: 'Beauty', helper: 'Products and appointments', Icon: FiStar, accent: 'bg-fuchsia-50 text-fuchsia-700'},
-  {id: 'Services', label: 'Services', helper: 'Repairs, tailoring, appointments', Icon: FiZap, accent: 'bg-indigo-50 text-indigo-700'},
-  {id: 'Gifts', label: 'Gifts', helper: 'Flowers, hampers, event extras', Icon: FiGift, accent: 'bg-rose-50 text-rose-700'}
-];
-const locations = ['Lusaka', 'Kabulonga', 'Woodlands', 'Ibex Hill', 'Roma', 'Chilenje', 'Kitwe'];
 const tabs: Array<{id: CustomerTab; label: string; Icon: typeof FiHome}> = [
   {id: 'discover', label: 'Discover', Icon: FiHome},
   {id: 'chat', label: 'Chat', Icon: FiMessageCircle},
@@ -57,66 +38,19 @@ const tabs: Array<{id: CustomerTab; label: string; Icon: typeof FiHome}> = [
   {id: 'profile', label: 'Profile', Icon: FiUser}
 ];
 
-const customerProfile = {
-  name: 'Naledi Mwansa',
-  username: '@naledi.m',
-  mobile: '+260 977 000 001',
-  email: 'naledi@example.com',
-  address: 'Plot 12, Great East Road, Kabulonga',
-  preferredPayment: 'MTN Money',
-  memberSince: 'May 2026'
-};
-
-const recentConversations: Array<{
-  merchantId: string;
-  unread?: number;
-  lastMessage: string;
-  time: string;
-  messages: ChatMessage[];
-}> = [
-  {
-    merchantId: 'mama-kunda',
-    unread: 2,
-    lastMessage: 'Your chicken and chips can be ready by 12:30.',
-    time: '10:42',
-    messages: [
-      {id: 'mk-1', role: 'customer', text: 'Do you still have chicken and chips?'},
-      {id: 'mk-2', role: 'bot', text: 'Yes, 18 portions are available today. Delivery slots start at 12:30.'},
-      {id: 'mk-3', role: 'system', text: 'Payment protection simulation available at checkout.'}
-    ]
-  },
-  {
-    merchantId: 'baked-tasha',
-    lastMessage: 'A chocolate birthday cake under K500 is available.',
-    time: 'Yesterday',
-    messages: [
-      {id: 'bt-1', role: 'customer', text: 'Can I get a cake for tomorrow?'},
-      {id: 'bt-2', role: 'bot', text: 'Yes. The chocolate birthday cake is K450 and needs about 3 hours preparation.'}
-    ]
-  },
-  {
-    merchantId: 'lusaka-tailor',
-    unread: 1,
-    lastMessage: 'Zip repair can be completed today if dropped before 14:00.',
-    time: 'Mon',
-    messages: [
-      {id: 'lt-1', role: 'customer', text: 'I need a tailor before Friday.'},
-      {id: 'lt-2', role: 'bot', text: 'Lusaka Tailor Studio has quick repairs today and alterations this week.'}
-    ]
-  }
-];
-
 export const DiscoveryPageClient = () => {
   const [session, setSession] = useState<CommerceSession | null>(null);
   const [activeTab, setActiveTab] = useState<CustomerTab>('discover');
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [multiCart, setMultiCart] = useState<MultiMerchantCartState>(() => readMultiCart());
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<DiscoveryFilters>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cartMessage, setCartMessage] = useState('');
-  const [pendingProduct, setPendingProduct] = useState<ProductResult | null>(null);
 
   const results = useMemo(() => searchCommerce(query, filters), [filters, query]);
+  const cartCount = getCartItemCount(multiCart);
 
   if (!session) {
     return (
@@ -144,20 +78,17 @@ export const DiscoveryPageClient = () => {
     }, 450);
   };
 
-  const addResultToCart = (product: ProductResult, force = false) => {
+  const refreshCart = () => setMultiCart(readMultiCart());
+
+  const addResultToCart = (product: ProductResult) => {
     if (product.available === false || product.stock < 1) {
       setCartMessage('This product is unavailable. Choose another item from this merchant.');
       return;
     }
-    const cart = readCart();
-    if (!force && cart.merchantId && cart.merchantId !== product.merchant.id && cart.items.length > 0) {
-      setPendingProduct(product);
-      return;
-    }
-    const nextCart = addCartItem(force ? {items: []} : cart, product.merchant, product);
-    saveCart(nextCart);
-    setCartMessage(`${product.name} added to cart.`);
-    setPendingProduct(null);
+    const nextCart = addCartItem(readMultiCart(), product.merchant, product);
+    saveMultiCart(nextCart);
+    setMultiCart(nextCart);
+    setCartMessage(`${product.name} added to ${product.merchant.name} cart.`);
   };
 
   return (
@@ -211,9 +142,14 @@ export const DiscoveryPageClient = () => {
               <button type="button" onClick={() => setSession(null)} className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Logout">
                 <FiLogOut />
               </button>
-              <Link href="/checkout" className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Open checkout">
+              <button type="button" onClick={() => setCartDrawerOpen(true)} className="relative rounded-full border border-neutral-200 bg-white p-3" aria-label="Open cart">
                 <FiShoppingBag />
-              </Link>
+                {cartCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full bg-amber-500 text-xs font-black text-neutral-950">
+                    {cartCount}
+                  </span>
+                ) : null}
+              </button>
             </div>
           </div>
         </header>
@@ -227,8 +163,6 @@ export const DiscoveryPageClient = () => {
               loading={loading}
               error={error}
               cartMessage={cartMessage}
-              pendingProduct={pendingProduct}
-              setPendingProduct={setPendingProduct}
               results={results}
               runSearch={runSearch}
               addResultToCart={addResultToCart}
@@ -239,6 +173,22 @@ export const DiscoveryPageClient = () => {
           {activeTab === 'orders' ? <OrdersTab /> : null}
           {activeTab === 'profile' ? <ProfileTab session={session} /> : null}
         </section>
+
+        <button
+          type="button"
+          onClick={() => setCartDrawerOpen(true)}
+          className="fixed bottom-24 right-4 z-30 grid h-16 w-16 place-items-center rounded-full bg-neutral-950 text-white shadow-xl transition hover:-translate-y-1 lg:bottom-6"
+          aria-label="Open saved carts"
+        >
+          <FiShoppingBag size={24} />
+          {cartCount > 0 ? (
+            <span className="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full bg-amber-500 text-sm font-black text-neutral-950">
+              {cartCount}
+            </span>
+          ) : null}
+        </button>
+
+        {cartDrawerOpen ? <CartDrawer cart={multiCart} onClose={() => setCartDrawerOpen(false)} onRefresh={refreshCart} /> : null}
 
         <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden" aria-label="Customer tabs">
           {tabs.map(({id, label, Icon}) => (
@@ -268,11 +218,9 @@ type DiscoverTabProps = {
   loading: boolean;
   error: string;
   cartMessage: string;
-  pendingProduct: ProductResult | null;
-  setPendingProduct: (product: ProductResult | null) => void;
   results: ReturnType<typeof searchCommerce>;
   runSearch: (query?: string) => void;
-  addResultToCart: (product: ProductResult, force?: boolean) => void;
+  addResultToCart: (product: ProductResult) => void;
 };
 
 const DiscoverTab = ({
@@ -283,8 +231,6 @@ const DiscoverTab = ({
   loading,
   error,
   cartMessage,
-  pendingProduct,
-  setPendingProduct,
   results,
   runSearch,
   addResultToCart
@@ -313,7 +259,7 @@ const DiscoverTab = ({
       </form>
 
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {suggestions.map((suggestion) => (
+            {discoverySuggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
@@ -341,7 +287,7 @@ const DiscoverTab = ({
               ) : null}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {categoryCards.map(({id, label, helper, Icon, accent}) => {
+              {discoveryCategoryCards.map(({id, label, helper, Icon, accent}) => {
                 const isActive = filters.category === id;
                 return (
                   <button
@@ -373,7 +319,7 @@ const DiscoverTab = ({
                 aria-label="Location"
               >
                 <option value="">All locations</option>
-                {locations.map((location) => <option key={location}>{location}</option>)}
+                {customerFilterLocations.map((location) => <option key={location}>{location}</option>)}
               </select>
               <input
                 type="number"
@@ -397,16 +343,6 @@ const DiscoverTab = ({
           ) : null}
 
           {cartMessage ? <div className="rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">{cartMessage}</div> : null}
-          {pendingProduct ? (
-            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4">
-              <p className="font-black text-amber-950">Your cart currently contains products from another merchant. Starting a new order will clear the current cart.</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setPendingProduct(null)} className="rounded-2xl bg-white px-4 py-3 font-black">Keep cart</button>
-                <button type="button" onClick={() => addResultToCart(pendingProduct, true)} className="rounded-2xl bg-amber-500 px-4 py-3 font-black">Start new order</button>
-              </div>
-            </div>
-          ) : null}
-
           <section>
             <h2 className="text-lg font-black">Merchants</h2>
             <div className="mt-3 grid gap-3 xl:grid-cols-2">
@@ -481,12 +417,80 @@ const DiscoverTab = ({
   </section>
 );
 
+const CartDrawer = ({cart, onClose, onRefresh}: {cart: MultiMerchantCartState; onClose: () => void; onRefresh: () => void}) => (
+  <div className="fixed inset-0 z-40 bg-black/40 p-3">
+    <aside className="ml-auto flex h-full w-full max-w-[440px] flex-col rounded-3xl bg-white shadow-2xl">
+      <header className="border-b border-neutral-200 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Saved carts</p>
+            <h2 className="text-2xl font-black">Fulfil from multiple stores</h2>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full bg-neutral-100 px-3 py-2 text-sm font-black">
+            Close
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        {cart.groups.length === 0 ? (
+          <StateCard icon={<FiShoppingBag />} title="No saved carts" body="Add products from any merchant and they will be grouped here by store." />
+        ) : null}
+
+        {cart.groups.map((group) => {
+          const merchant = findSeller(group.merchantId);
+          const quantity = getMerchantCartQuantity(group);
+          const previewProducts = group.items.slice(0, 2).map((line) => findProduct(merchant, line.productId).name).join(', ');
+
+          return (
+            <article key={group.merchantId} className="rounded-3xl border border-neutral-200 p-4">
+              <div className="flex gap-3">
+                <div className={`h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br ${merchant.products[0].imageStyle}`} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-black">{merchant.name}</h3>
+                  <p className="mt-1 text-sm text-neutral-500">{quantity} item{quantity === 1 ? '' : 's'} - {previewProducts}</p>
+                  <p className="mt-1 text-xs font-bold text-neutral-400">Saved {new Date(group.updatedAt).toLocaleTimeString('en-ZM', {hour: '2-digit', minute: '2-digit'})}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link
+                  href={`/checkout?merchant=${group.merchantId}`}
+                  onClick={() => {
+                    setActiveMerchantCart(group.merchantId);
+                    onRefresh();
+                  }}
+                  className="rounded-2xl bg-neutral-950 px-4 py-3 text-center font-black text-white"
+                >
+                  Fulfil order
+                </Link>
+                <Link href={`/merchants/${group.merchantId}`} className="rounded-2xl border border-neutral-200 px-4 py-3 text-center font-black">
+                  Add more
+                </Link>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {cart.groups.length > 1 ? (
+        <footer className="border-t border-neutral-200 p-4">
+          <p className="text-sm leading-6 text-neutral-500">
+            Each store keeps its own cart so the customer can fulfil several merchant orders in parallel while each merchant still receives a clean fulfilment queue.
+          </p>
+        </footer>
+      ) : null}
+    </aside>
+  </div>
+);
+
 const ChatTab = () => {
-  const [selectedConversation, setSelectedConversation] = useState(recentConversations[0]);
-  const merchant = findSeller(selectedConversation.merchantId);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const selectedConversation = recentConversations.find((conversation) => conversation.merchantId === selectedConversationId) ?? null;
+  const merchant = selectedConversation ? findSeller(selectedConversation.merchantId) : null;
 
   return (
-    <section className="mx-auto grid w-full max-w-7xl gap-6 p-4 lg:grid-cols-[380px_1fr] lg:p-8">
+    <section className="mx-auto w-full max-w-7xl p-4 lg:p-8">
+      {!selectedConversation || !merchant ? (
       <div className="space-y-3">
         {recentConversations.map((conversation) => {
           const conversationMerchant = findSeller(conversation.merchantId);
@@ -494,10 +498,8 @@ const ChatTab = () => {
             <button
               key={conversation.merchantId}
               type="button"
-              onClick={() => setSelectedConversation(conversation)}
-              className={`w-full rounded-3xl p-4 text-left shadow-sm transition ${
-                selectedConversation.merchantId === conversation.merchantId ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950'
-              }`}
+              onClick={() => setSelectedConversationId(conversation.merchantId)}
+              className="w-full rounded-3xl bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex gap-3">
                 <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${conversationMerchant.products[0].imageStyle}`} />
@@ -514,8 +516,13 @@ const ChatTab = () => {
           );
         })}
       </div>
-      <section className="flex min-h-[560px] flex-col overflow-hidden rounded-3xl bg-white shadow-sm">
+      ) : (
+      <section className="flex min-h-[calc(100vh-160px)] flex-col overflow-hidden rounded-3xl bg-white shadow-sm">
         <header className="border-b border-neutral-200 p-5">
+          <button type="button" onClick={() => setSelectedConversationId(null)} className="mb-4 inline-flex items-center gap-2 text-sm font-black text-neutral-500">
+            <FiArrowLeft />
+            Back to chats
+          </button>
           <p className="text-sm font-black text-emerald-700">{merchant.verifiedLevel}</p>
           <h2 className="text-2xl font-black">{merchant.name}</h2>
           <p className="text-sm text-neutral-500">{merchant.responseTime} response - {merchant.location}</p>
@@ -542,16 +549,18 @@ const ChatTab = () => {
           </div>
         </footer>
       </section>
+      )}
     </section>
   );
 };
 
 const OrdersTab = () => {
   const orders = readOrders(initialOrders);
-  const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.id ?? '');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   return (
-    <section className="mx-auto grid w-full max-w-7xl gap-4 p-4 lg:grid-cols-[420px_1fr] lg:p-8">
+    <section className="mx-auto w-full max-w-7xl p-4 lg:p-8">
+      {!selectedOrderId ? (
       <div className="space-y-3">
         <div className="rounded-3xl bg-white p-5 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Recent orders</p>
@@ -560,36 +569,34 @@ const OrdersTab = () => {
       {orders.map((order) => {
         const merchant = findSeller(order.sellerId);
         const product = findProduct(merchant, order.items[0]?.productId ?? merchant.products[0].id);
-        const isSelected = selectedOrderId === order.id;
         return (
           <button
             key={order.id}
             type="button"
-            onClick={() => setSelectedOrderId(isSelected ? '' : order.id)}
-            className={`w-full rounded-3xl p-4 text-left shadow-sm transition hover:-translate-y-0.5 ${
-              isSelected ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950'
-            }`}
-            aria-expanded={isSelected}
+            onClick={() => setSelectedOrderId(order.id)}
+            className="w-full rounded-3xl bg-white p-4 text-left text-neutral-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="flex items-center gap-4">
               <div className={`h-16 w-16 shrink-0 rounded-3xl bg-gradient-to-br ${product.imageStyle}`} />
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-black ${isSelected ? 'text-amber-300' : 'text-emerald-700'}`}>{getStatusLabel(order.status)}</p>
+                <p className="text-sm font-black text-emerald-700">{getStatusLabel(order.status)}</p>
                 <h3 className="text-xl font-black">{order.id}</h3>
-                <p className={`truncate text-sm ${isSelected ? 'text-neutral-300' : 'text-neutral-500'}`}>{merchant.name} - {product.name}</p>
+                <p className="truncate text-sm text-neutral-500">{merchant.name} - {product.name}</p>
               </div>
-              {isSelected ? <FiChevronUp /> : <FiChevronDown />}
+              <FiChevronDown />
             </div>
           </button>
         );
       })}
       </div>
-      <OrderDetailPanel orderId={selectedOrderId || orders[0]?.id || ''} />
+      ) : (
+        <OrderDetailPanel orderId={selectedOrderId} onBack={() => setSelectedOrderId(null)} />
+      )}
     </section>
   );
 };
 
-const OrderDetailPanel = ({orderId}: {orderId: string}) => {
+const OrderDetailPanel = ({orderId, onBack}: {orderId: string; onBack: () => void}) => {
   const orders = readOrders(initialOrders);
   const order = orders.find((item) => item.id === orderId) ?? orders[0];
 
@@ -605,7 +612,11 @@ const OrderDetailPanel = ({orderId}: {orderId: string}) => {
   const primaryProduct = lines[0]?.product ?? merchant.products[0];
 
   return (
-    <article className="rounded-3xl bg-white p-5 shadow-sm">
+    <article className="min-h-[calc(100vh-160px)] rounded-3xl bg-white p-5 shadow-sm">
+      <button type="button" onClick={onBack} className="mb-5 inline-flex items-center gap-2 text-sm font-black text-neutral-500">
+        <FiArrowLeft />
+        Back to orders
+      </button>
       <div className="flex flex-wrap items-start gap-4">
         <div className={`h-24 w-24 shrink-0 rounded-3xl bg-gradient-to-br ${primaryProduct.imageStyle}`} />
         <div className="min-w-0 flex-1">
@@ -675,10 +686,10 @@ const ProfileTab = ({session}: {session: CommerceSession}) => {
         <p className="text-neutral-500">{session.username}</p>
         <div className="mt-5 space-y-3 text-sm">
           <ProfileRow label="Mobile" value={session.mobile} />
-          <ProfileRow label="Email" value={customerProfile.email} />
-          <ProfileRow label="Address" value={customerProfile.address} />
-          <ProfileRow label="Payment" value={customerProfile.preferredPayment} />
-          <ProfileRow label="Member since" value={customerProfile.memberSince} />
+          <ProfileRow label="Email" value={customerProfileSeed.email} />
+          <ProfileRow label="Address" value={customerProfileSeed.address} />
+          <ProfileRow label="Payment" value={customerProfileSeed.preferredPayment} />
+          <ProfileRow label="Member since" value={customerProfileSeed.memberSince} />
         </div>
       </aside>
       <div className="space-y-4">
