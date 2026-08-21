@@ -5,8 +5,13 @@ import type {Dispatch, ReactNode, SetStateAction} from 'react';
 import {useMemo, useState} from 'react';
 import {
   FiAlertCircle,
+  FiChevronDown,
+  FiChevronUp,
   FiClock,
+  FiGift,
+  FiGrid,
   FiHome,
+  FiLogOut,
   FiMessageCircle,
   FiPackage,
   FiSearch,
@@ -14,7 +19,8 @@ import {
   FiShoppingBag,
   FiStar,
   FiTruck,
-  FiUser
+  FiUser,
+  FiZap
 } from 'react-icons/fi';
 
 import {initialOrders, sellers} from '../data/mockCommerce';
@@ -23,6 +29,7 @@ import {addCartItem, readCart, saveCart} from '../services/cartService';
 import {readOrders} from '../services/orderService';
 import {searchCommerce} from '../services/searchService';
 import type {ChatMessage, DiscoveryFilters, ProductResult} from '../types/commerce';
+import {AuthFlow, type CommerceSession} from './AuthFlow';
 
 type CustomerTab = 'discover' | 'chat' | 'orders' | 'profile';
 
@@ -33,7 +40,15 @@ const suggestions = [
   'Beauty products delivered today'
 ];
 
-const categories = ['Bakery', 'Lunch', 'Groceries', 'Fashion', 'Beauty', 'Services', 'Gifts'];
+const categoryCards: Array<{id: string; label: string; helper: string; Icon: typeof FiGrid; accent: string}> = [
+  {id: 'Bakery', label: 'Bakery', helper: 'Cakes, cupcakes, breakfast bakes', Icon: FiGift, accent: 'bg-pink-50 text-pink-700'},
+  {id: 'Lunch', label: 'Lunch', helper: 'Prepared meals ready today', Icon: FiShoppingBag, accent: 'bg-amber-50 text-amber-700'},
+  {id: 'Groceries', label: 'Groceries', helper: 'Fresh produce and household basics', Icon: FiGrid, accent: 'bg-emerald-50 text-emerald-700'},
+  {id: 'Fashion', label: 'Fashion', helper: 'Clothing, shoes, custom pieces', Icon: FiUser, accent: 'bg-sky-50 text-sky-700'},
+  {id: 'Beauty', label: 'Beauty', helper: 'Products and appointments', Icon: FiStar, accent: 'bg-fuchsia-50 text-fuchsia-700'},
+  {id: 'Services', label: 'Services', helper: 'Repairs, tailoring, appointments', Icon: FiZap, accent: 'bg-indigo-50 text-indigo-700'},
+  {id: 'Gifts', label: 'Gifts', helper: 'Flowers, hampers, event extras', Icon: FiGift, accent: 'bg-rose-50 text-rose-700'}
+];
 const locations = ['Lusaka', 'Kabulonga', 'Woodlands', 'Ibex Hill', 'Roma', 'Chilenje', 'Kitwe'];
 const tabs: Array<{id: CustomerTab; label: string; Icon: typeof FiHome}> = [
   {id: 'discover', label: 'Discover', Icon: FiHome},
@@ -92,6 +107,7 @@ const recentConversations: Array<{
 ];
 
 export const DiscoveryPageClient = () => {
+  const [session, setSession] = useState<CommerceSession | null>(null);
   const [activeTab, setActiveTab] = useState<CustomerTab>('discover');
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<DiscoveryFilters>({});
@@ -101,6 +117,23 @@ export const DiscoveryPageClient = () => {
   const [pendingProduct, setPendingProduct] = useState<ProductResult | null>(null);
 
   const results = useMemo(() => searchCommerce(query, filters), [filters, query]);
+
+  if (!session) {
+    return (
+      <AuthFlow
+        initialRole="customer"
+        title="Login or join ZamComm"
+        description="Preview how customers and merchants enter the commerce workspace before moving into discovery, chat, orders, and fulfilment."
+        onComplete={(nextSession) => {
+          if (nextSession.role === 'merchant') {
+            window.location.href = '/merchant/orders';
+            return;
+          }
+          setSession(nextSession);
+        }}
+      />
+    );
+  }
 
   const runSearch = (nextQuery = query) => {
     setError('');
@@ -154,6 +187,14 @@ export const DiscoveryPageClient = () => {
             <p className="font-black text-emerald-950">Payment protection simulation</p>
             <p className="mt-1 text-sm leading-6 text-emerald-800">Track protected orders from discovery to delivery without leaving the platform.</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setSession(null)}
+            className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 font-black text-neutral-600 transition hover:bg-neutral-100"
+          >
+            <FiLogOut />
+            Logout
+          </button>
         </aside>
 
         <section className="min-w-0 pb-24 lg:pb-0">
@@ -164,10 +205,16 @@ export const DiscoveryPageClient = () => {
               <h1 className="text-2xl font-black lg:text-4xl">
                 {tabs.find((tab) => tab.id === activeTab)?.label}
               </h1>
+              <p className="mt-1 text-sm font-semibold text-neutral-500">{session.name} {session.onboarded ? '- onboarded' : '- logged in'}</p>
             </div>
-            <Link href="/checkout" className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Open checkout">
-              <FiShoppingBag />
-            </Link>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setSession(null)} className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Logout">
+                <FiLogOut />
+              </button>
+              <Link href="/checkout" className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Open checkout">
+                <FiShoppingBag />
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -190,7 +237,7 @@ export const DiscoveryPageClient = () => {
 
           {activeTab === 'chat' ? <ChatTab /> : null}
           {activeTab === 'orders' ? <OrdersTab /> : null}
-          {activeTab === 'profile' ? <ProfileTab /> : null}
+          {activeTab === 'profile' ? <ProfileTab session={session} /> : null}
         </section>
 
         <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden" aria-label="Customer tabs">
@@ -281,19 +328,43 @@ const DiscoverTab = ({
             ))}
           </div>
 
-          <div className="grid gap-3 rounded-3xl bg-white p-3 shadow-sm">
-            <div className="flex gap-2 overflow-x-auto">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setFilters((current) => ({...current, category: current.category === category ? undefined : category}))}
-                  className={`shrink-0 rounded-full px-3 py-2 text-sm font-bold ${filters.category === category ? 'bg-emerald-700 text-white' : 'bg-white text-neutral-700'}`}
-                >
-                  {category}
+          <section className="rounded-3xl bg-white p-4 shadow-sm">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Browse by need</p>
+                <h2 className="mt-1 text-xl font-black">Categories</h2>
+              </div>
+              {filters.category ? (
+                <button type="button" onClick={() => setFilters((current) => ({...current, category: undefined}))} className="text-sm font-black text-emerald-700">
+                  Clear
                 </button>
-              ))}
+              ) : null}
             </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {categoryCards.map(({id, label, helper, Icon, accent}) => {
+                const isActive = filters.category === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setFilters((current) => ({...current, category: current.category === id ? undefined : id}))}
+                    className={`group relative min-h-32 overflow-hidden rounded-3xl border p-4 text-left transition duration-300 hover:-translate-y-1 hover:shadow-lg ${
+                      isActive ? 'border-neutral-950 bg-neutral-950 text-white shadow-lg' : 'border-neutral-200 bg-white text-neutral-950 hover:border-neutral-300'
+                    }`}
+                  >
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500 opacity-0 transition group-hover:opacity-100" />
+                    <div className={`grid h-11 w-11 place-items-center rounded-2xl transition group-hover:scale-110 ${isActive ? 'bg-white/10 text-white' : accent}`}>
+                      <Icon size={20} />
+                    </div>
+                    <h3 className="mt-4 font-black">{label}</h3>
+                    <p className={`mt-1 text-sm leading-5 ${isActive ? 'text-neutral-300' : 'text-neutral-500'}`}>{helper}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="grid gap-3 rounded-3xl bg-white p-3 shadow-sm">
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={filters.location ?? ''}
@@ -477,39 +548,120 @@ const ChatTab = () => {
 
 const OrdersTab = () => {
   const orders = readOrders(initialOrders);
+  const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.id ?? '');
 
   return (
-    <section className="mx-auto w-full max-w-7xl space-y-4 p-4 lg:p-8">
+    <section className="mx-auto grid w-full max-w-7xl gap-4 p-4 lg:grid-cols-[420px_1fr] lg:p-8">
+      <div className="space-y-3">
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Recent orders</p>
+          <h2 className="mt-1 text-2xl font-black">Tap an order for details</h2>
+        </div>
       {orders.map((order) => {
         const merchant = findSeller(order.sellerId);
         const product = findProduct(merchant, order.items[0]?.productId ?? merchant.products[0].id);
+        const isSelected = selectedOrderId === order.id;
         return (
-          <article key={order.id} className="rounded-3xl bg-white p-5 shadow-sm">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className={`h-20 w-20 rounded-3xl bg-gradient-to-br ${product.imageStyle}`} />
+          <button
+            key={order.id}
+            type="button"
+            onClick={() => setSelectedOrderId(isSelected ? '' : order.id)}
+            className={`w-full rounded-3xl p-4 text-left shadow-sm transition hover:-translate-y-0.5 ${
+              isSelected ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950'
+            }`}
+            aria-expanded={isSelected}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`h-16 w-16 shrink-0 rounded-3xl bg-gradient-to-br ${product.imageStyle}`} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-black text-emerald-700">{getStatusLabel(order.status)}</p>
-                <h2 className="text-2xl font-black">{order.id}</h2>
-                <p className="text-sm text-neutral-500">{merchant.name} - {product.name}</p>
+                <p className={`text-sm font-black ${isSelected ? 'text-amber-300' : 'text-emerald-700'}`}>{getStatusLabel(order.status)}</p>
+                <h3 className="text-xl font-black">{order.id}</h3>
+                <p className={`truncate text-sm ${isSelected ? 'text-neutral-300' : 'text-neutral-500'}`}>{merchant.name} - {product.name}</p>
               </div>
-              <Link href={`/orders/${order.id}`} className="rounded-2xl bg-neutral-950 px-4 py-3 font-black text-white">
-                Track order
-              </Link>
+              {isSelected ? <FiChevronUp /> : <FiChevronDown />}
             </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-4">
-              <Metric label="Payment" value={order.paymentStatus ?? 'paid'} />
-              <Metric label="Protection" value={order.protectionStatus?.replaceAll('_', ' ') ?? 'funds protected'} />
-              <Metric label="Fulfilment" value={order.fulfilmentMethod} />
-              <Metric label="Amount" value={order.finalAmount ? formatKwacha(order.finalAmount) : 'Seed order'} />
-            </div>
-          </article>
+          </button>
         );
       })}
+      </div>
+      <OrderDetailPanel orderId={selectedOrderId || orders[0]?.id || ''} />
     </section>
   );
 };
 
-const ProfileTab = () => {
+const OrderDetailPanel = ({orderId}: {orderId: string}) => {
+  const orders = readOrders(initialOrders);
+  const order = orders.find((item) => item.id === orderId) ?? orders[0];
+
+  if (!order) {
+    return <StateCard icon={<FiPackage />} title="No orders yet" body="Orders will appear here once checkout creates them." />;
+  }
+
+  const merchant = findSeller(order.sellerId);
+  const lines = order.items.map((line) => {
+    const product = findProduct(merchant, line.productId);
+    return {...line, product};
+  });
+  const primaryProduct = lines[0]?.product ?? merchant.products[0];
+
+  return (
+    <article className="rounded-3xl bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className={`h-24 w-24 shrink-0 rounded-3xl bg-gradient-to-br ${primaryProduct.imageStyle}`} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-black text-emerald-700">{getStatusLabel(order.status)}</p>
+          <h2 className="mt-1 text-3xl font-black">{order.id}</h2>
+          <p className="mt-1 text-sm text-neutral-500">{merchant.name} - {order.fulfilmentMethod}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <Metric label="Payment" value={order.paymentStatus ?? 'paid'} />
+        <Metric label="Protection" value={order.protectionStatus?.replaceAll('_', ' ') ?? 'funds protected'} />
+        <Metric label="Fulfilment" value={order.fulfilmentMethod} />
+        <Metric label="Amount" value={order.finalAmount ? formatKwacha(order.finalAmount) : 'Seed order'} />
+      </div>
+
+      <section className="mt-5 rounded-3xl bg-neutral-100 p-4">
+        <h3 className="font-black">Items</h3>
+        <div className="mt-3 space-y-2">
+          {lines.map(({product, quantity, variant}) => (
+            <div key={product.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3">
+              <div>
+                <p className="font-black">{product.name}</p>
+                <p className="text-sm text-neutral-500">{variant ?? product.category}</p>
+              </div>
+              <p className="font-black">x{quantity}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {order.deliveryAddress ? (
+        <section className="mt-4 rounded-3xl bg-neutral-100 p-4">
+          <h3 className="font-black">Delivery details</h3>
+          <p className="mt-2 text-sm font-semibold text-neutral-600">
+            {order.deliveryAddress.fullName} - {order.deliveryAddress.phone}
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            {order.deliveryAddress.addressLine}, {order.deliveryAddress.area}
+          </p>
+        </section>
+      ) : null}
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Link href={`/orders/${order.id}`} className="rounded-2xl bg-neutral-950 px-4 py-3 font-black text-white">
+          Track order
+        </Link>
+        <button type="button" className="rounded-2xl border border-neutral-200 px-4 py-3 font-black text-neutral-700">
+          Need help with this order
+        </button>
+      </div>
+    </article>
+  );
+};
+
+const ProfileTab = ({session}: {session: CommerceSession}) => {
   const orders = readOrders(initialOrders);
   const completed = orders.filter((order) => order.status === 'completed').length;
 
@@ -517,12 +669,12 @@ const ProfileTab = () => {
     <section className="mx-auto grid w-full max-w-7xl gap-6 p-4 lg:grid-cols-[360px_1fr] lg:p-8">
       <aside className="rounded-3xl bg-white p-6 shadow-sm">
         <div className="grid h-24 w-24 place-items-center rounded-full bg-neutral-950 text-3xl font-black text-white">
-          {customerProfile.name.slice(0, 1)}
+          {session.name.slice(0, 1)}
         </div>
-        <h2 className="mt-4 text-3xl font-black">{customerProfile.name}</h2>
-        <p className="text-neutral-500">{customerProfile.username}</p>
+        <h2 className="mt-4 text-3xl font-black">{session.name}</h2>
+        <p className="text-neutral-500">{session.username}</p>
         <div className="mt-5 space-y-3 text-sm">
-          <ProfileRow label="Mobile" value={customerProfile.mobile} />
+          <ProfileRow label="Mobile" value={session.mobile} />
           <ProfileRow label="Email" value={customerProfile.email} />
           <ProfileRow label="Address" value={customerProfile.address} />
           <ProfileRow label="Payment" value={customerProfile.preferredPayment} />

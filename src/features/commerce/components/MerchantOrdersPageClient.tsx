@@ -2,14 +2,39 @@
 
 import Link from 'next/link';
 import {useState} from 'react';
+import {FiLogOut} from 'react-icons/fi';
 
 import {initialOrders} from '../data/mockCommerce';
 import {findProduct, findSeller, getNextOrderStatus, getStatusLabel} from '../lib/commerceLogic';
 import {readOrders, saveOrders} from '../services/orderService';
 import type {Order} from '../types/commerce';
+import {AuthFlow, type CommerceSession} from './AuthFlow';
 
 export const MerchantOrdersPageClient = () => {
+  const [session, setSession] = useState<CommerceSession | null>(null);
   const [orders, setOrders] = useState<Order[]>(() => readOrders(initialOrders));
+
+  if (!session) {
+    return (
+      <AuthFlow
+        initialRole="merchant"
+        title="Merchant login and onboarding"
+        description="Preview how merchants enter the order workspace, confirm business details, and manage fulfilment after checkout."
+        onComplete={(nextSession) => {
+          if (nextSession.role === 'customer') {
+            window.location.href = '/discover';
+            return;
+          }
+          setSession(nextSession);
+        }}
+        alternateAction={
+          <Link href="/discover" className="inline-flex rounded-2xl bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/15">
+            Continue as customer
+          </Link>
+        }
+      />
+    );
+  }
 
   const updateOrder = (order: Order, reject = false) => {
     const nextOrders = orders.map((item) =>
@@ -29,9 +54,23 @@ export const MerchantOrdersPageClient = () => {
     <main className="min-h-screen bg-neutral-100 p-4 text-neutral-950">
       <div className="mx-auto max-w-7xl space-y-4">
         <header className="rounded-3xl bg-white p-5 shadow-sm">
-          <Link href="/discover" className="text-sm font-black text-neutral-500">Back to customer app</Link>
-          <h1 className="mt-2 text-3xl font-black">Merchant order management</h1>
-          <p className="mt-1 text-sm text-neutral-500">Prototype view consuming the same local orders created during checkout.</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <Link href="/discover" className="text-sm font-black text-neutral-500">Back to customer app</Link>
+              <h1 className="mt-2 text-3xl font-black">Merchant order management</h1>
+              <p className="mt-1 text-sm text-neutral-500">
+                {session.businessName ?? session.name} - {session.onboarded ? 'onboarded merchant workspace' : 'logged in merchant workspace'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSession(null)}
+              className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-neutral-200 px-4 font-black text-neutral-600 transition hover:bg-neutral-100"
+            >
+              <FiLogOut />
+              Logout
+            </button>
+          </div>
         </header>
 
         {orders.map((order) => {
