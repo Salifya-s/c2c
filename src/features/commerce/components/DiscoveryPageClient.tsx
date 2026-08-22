@@ -52,6 +52,11 @@ export const DiscoveryPageClient = () => {
   const results = useMemo(() => searchCommerce(query, filters), [filters, query]);
   const cartCount = getCartItemCount(multiCart);
 
+  const logout = async () => {
+    await fetch('/api/auth/logout', {method: 'POST'});
+    setSession(null);
+  };
+
   if (!session) {
     return (
       <AuthFlow
@@ -120,7 +125,7 @@ export const DiscoveryPageClient = () => {
           </div>
           <button
             type="button"
-            onClick={() => setSession(null)}
+            onClick={logout}
             className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 font-black text-neutral-600 transition hover:bg-neutral-100"
           >
             <FiLogOut />
@@ -139,7 +144,7 @@ export const DiscoveryPageClient = () => {
               <p className="mt-1 text-sm font-semibold text-neutral-500">{session.name} {session.onboarded ? '- onboarded' : '- logged in'}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setSession(null)} className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Logout">
+              <button type="button" onClick={logout} className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Logout">
                 <FiLogOut />
               </button>
               <button type="button" onClick={() => setCartDrawerOpen(true)} className="relative rounded-full border border-neutral-200 bg-white p-3" aria-label="Open cart">

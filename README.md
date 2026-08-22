@@ -1,18 +1,18 @@
 # AICOS Zambia Commerce Prototype
 
-This is a working prototype for the AI Commerce Operating System described in the project brief, feature inspiration notes, and PDF specification. It focuses on proving that customers and merchants can enter the platform through simulated login/onboarding, search for local needs, discover trusted merchants, browse stores, create protected orders, and manage fulfilment without leaving the web app.
+This is a working prototype moving toward a shippable AI Commerce Operating System. It focuses on proving that customers and merchants can register or log in with password + OTP, search for local needs, discover trusted merchants, browse stores, create protected orders, and manage fulfilment without leaving the web app.
 
 ## Main Customer Tabs
 
-- `/discover` - Full-screen responsive customer workspace with simulated login/onboarding, Discover, Chat, Orders, Profile, and logout.
+- `/discover` - Full-screen responsive customer workspace with password + OTP login/register, Discover, Chat, Orders, Profile, and logout.
 - `/merchants/[merchantId]` - Storefront, trust details, policies, product browsing, product detail modal, and add-to-cart.
 - `/checkout` - Cart review, fulfilment method, address, slot selection, simulated payment, and order creation.
 - `/orders/[orderId]` - Confirmation, payment-protection status, customer timeline, support issue entry, and fulfilment simulation.
-- `/merchant/orders` - Merchant login/onboarding and order-management view consuming customer-created prototype orders.
+- `/merchant/orders` - Merchant password + OTP login/register, guided onboarding, and order-management view consuming customer-created prototype orders.
 
 ## What the Prototype Does
 
-- Simulated customer login and simplified merchant onboarding flows with role switching and logout.
+- Customer and merchant login/register with password + OTP, backed by Next.js route handlers.
 - Guided merchant setup interview that asks plain-language questions about owner details, store category, first offer, pricing, service area, fulfilment, payments, trust settings, and brand tone.
 - Mobile-first customer discovery with realistic Zambian merchant examples.
 - Category discovery cards with icon placeholders, active states, and hover transformation effects.
@@ -62,6 +62,8 @@ The app is now structured as a standard Next.js project at the repository root. 
 
 Do not set the Output Directory to `public`; `public/` is only for static assets in this Next.js app.
 
+Set `AUTH_SESSION_SECRET` in production before using the auth routes. The current local auth store is file-backed for development and should be replaced with a durable database before production traffic.
+
 ## Folder and File Responsibilities
 
 ### `src/app/`
@@ -76,6 +78,11 @@ Do not set the Output Directory to `public`; `public/` is only for static assets
 - `src/app/merchant/orders/page.tsx` - Merchant order-management route for the prototype.
 - `src/app/hub/page.tsx` - Existing explanatory project hub route.
 - `src/app/auth/page.tsx` - Existing authentication/onboarding preview route.
+- `src/app/api/auth/register/start/route.ts` - Starts customer or merchant registration, hashes the password, creates a user draft, and sends an OTP challenge.
+- `src/app/api/auth/login/start/route.ts` - Checks password credentials and sends an OTP challenge.
+- `src/app/api/auth/verify-otp/route.ts` - Verifies OTP challenges and creates a signed HttpOnly session cookie.
+- `src/app/api/auth/me/route.ts` - Reads the current session cookie and returns the signed-in user.
+- `src/app/api/auth/logout/route.ts` - Clears the session cookie.
 - `src/app/favicon.ico` - Browser favicon.
 
 ### `src/features/commerce/`
@@ -99,6 +106,12 @@ Main customer commerce feature area. It keeps UI, mock data, logic, and shared t
 - `services/mockYangoProvider.ts` - Mock delivery-provider adapter for quotes, compatible slots, booking, and status.
 - `services/mockPaymentProvider.ts` - Simulated payment adapter with mobile money/card/pay-on-pickup success and failure paths.
 - `services/orderService.ts` - Local-storage order persistence and protected order creation.
+- `server/auth/crypto.ts` - Password hashing, OTP hashing, OTP generation, and signed session-token helpers.
+- `server/auth/otpDelivery.ts` - Replaceable OTP delivery adapter. It logs/surfaces development OTPs now; replace with SMS/email providers later.
+- `server/auth/responses.ts` - Shared auth response and session cookie helpers.
+- `server/auth/store.ts` - Development auth repository backed by `.data/auth-store.json`; replace with a database repository for production.
+- `server/auth/types.ts` - Shared backend auth record, OTP challenge, and public session types.
+- `types/auth.ts` - Shared auth/session/onboarding types used by both client components and backend auth routes.
 - `types/commerce.ts` - Shared TypeScript types for products, sellers, cart lines, orders, statuses, delivery slots, and chat messages.
 
 ### `src/components/`
@@ -158,26 +171,48 @@ Shared support for the retained hub and auth routes.
 - `addCartItem(cart, merchant, product)` - Adds products to the correct merchant cart group while preserving carts from other stores.
 - `getCartItemCount(cart)` and `getMerchantCartQuantity(group)` - Power the floating cart badge and merchant grouped cart drawer.
 - `setActiveMerchantCart(merchantId)` - Marks which merchant group checkout should process.
+- `hashPassword(password)` and `verifyPassword(password, hash, salt)` - Secure the first auth factor using scrypt.
+- `createOtp()`, `hashOtp(otp)`, and `verifyOtpHash(otp, hash)` - Support the second auth factor.
+- `signSession(payload)` and `verifySessionToken(token)` - Create/read signed HttpOnly session cookies.
 
 ## Current UX Progress
 
-- Customer entry: `/discover` opens with a simulated customer login/onboarding flow. Selecting merchant redirects into the merchant workspace.
-- Merchant entry: `/merchant/orders` opens with a simplified guided merchant setup interview. It generates a launch-ready store summary and carries the answers into the merchant workspace.
+- Customer entry: `/discover` opens with customer login/register. Both flows require password first and OTP second.
+- Merchant entry: `/merchant/orders` opens with merchant login/register. Register includes the guided onboarding interview, then password + OTP account creation.
 - Discover: search, suggestions, filters, category cards, merchant cards, product cards, and multi-merchant add-to-cart are working against local mock data.
 - Cart: the bottom-right floating cart button opens saved carts grouped by merchant. Each merchant group can resume checkout independently while other store carts remain saved.
 - Chat: only the recent chat list is displayed first. Selecting a chat opens a full-screen conversation detail within the app shell.
 - Orders: only the recent order list is displayed first. Selecting an order opens a full-screen detail view within the app shell. The help button is intentionally a placeholder for now.
 - Profile: customer personal information and order history are shown from the simulated session and mock order state.
 - Merchant workspace: dashboard metrics, order queue, inventory view, and support preview are implemented as a scaffold for future deeper merchant tools.
-- Merchant onboarding: currently stores answers in the in-memory session only. A backend should persist these answers as merchant profile, catalog draft, fulfilment settings, payment preferences, and trust-policy records.
+- Merchant onboarding: registration now sends onboarding answers to the auth backend and returns them in the signed session. A production database should persist them as merchant profile, catalog draft, fulfilment settings, payment preferences, and trust-policy records.
+
+## Shippable Product Checklist
+
+- Replace the file-backed auth store with a real database and migration workflow.
+- Connect OTP delivery to production SMS and email providers.
+- Add rate limiting for login, registration, and OTP verification endpoints.
+- Add password reset and account recovery.
+- Add email/mobile verification status and contact-change verification.
+- Add role-based route protection for customer-only and merchant-only pages.
+- Move carts and orders from browser/local storage into authenticated backend records.
+- Replace mock payment and escrow with real payment provider and compliance review.
+- Replace mock delivery with real courier/provider integration.
+- Add merchant catalog management: products, services, inventory, pricing, photos, availability, and policies.
+- Add support/dispute flows, internal notes, evidence upload, refunds, and escalation states.
+- Add audit logs for auth, payments, fulfilment, support, and merchant changes.
+- Add observability: error tracking, structured logs, metrics, and uptime checks.
+- Add automated tests for auth APIs, session handling, cart persistence, checkout, and merchant workflows.
+- Add privacy/security review for PII, session cookies, OTP handling, and data retention.
 
 ## Data and Future Backend Swap Points
 
 - Static catalog data currently lives in TypeScript data files under `src/features/commerce/data/`. These files are intentionally shaped like repository seed data so they can later be replaced by database reads or API responses.
-- Customer session, cart, and orders are still local browser state. The service functions in `services/cartService.ts` and `services/orderService.ts` are the intended boundaries for future authenticated API calls.
+- Customer auth sessions now use signed HttpOnly cookies. Cart and orders are still local browser state; the service functions in `services/cartService.ts` and `services/orderService.ts` are the intended boundaries for future authenticated API calls.
+- Development auth users and OTP challenges are stored in `.data/auth-store.json`, which is ignored by git. This is not a production database.
 - Mock payment and delivery adapters live behind provider-style service files. Production integrations should replace those files without forcing UI components to know payment or courier implementation details.
 - Components now consume data through service/data modules instead of defining most UX content inline. This improves cohesion and makes the prototype easier to grow.
 
 ## Prototype Boundaries
 
-The app is frontend-only. Authentication, onboarding, payments, AI parsing, fraud scoring, identity verification, courier tracking, disputes, merchant order management, customer memory, and help/support routing are simulated with local state and mock data. Real auth, real Yango, real payment processing, real escrow, production AI credentials, and a backend order database are still required for production.
+Authentication now has frontend and backend route handlers, but the local user store and OTP delivery are still development-grade. Payments, AI parsing, fraud scoring, identity verification, courier tracking, disputes, merchant order management, customer memory, and help/support routing are simulated with local state and mock data. Real database persistence, real SMS/email OTP delivery, real Yango, real payment processing, real escrow, production AI credentials, and a backend order database are still required for production.

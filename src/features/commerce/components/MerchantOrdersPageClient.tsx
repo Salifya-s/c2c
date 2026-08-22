@@ -17,6 +17,11 @@ export const MerchantOrdersPageClient = () => {
   const [orders, setOrders] = useState<Order[]>(() => readOrders(initialOrders));
   const [selectedView, setSelectedView] = useState<'orders' | 'inventory' | 'support'>('orders');
 
+  const logout = async () => {
+    await fetch('/api/auth/logout', {method: 'POST'});
+    setSession(null);
+  };
+
   if (!session) {
     return (
       <AuthFlow
@@ -94,7 +99,7 @@ export const MerchantOrdersPageClient = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setSession(null)}
+              onClick={logout}
                 className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-neutral-200 px-4 font-black text-neutral-600 transition hover:bg-neutral-100"
               >
                 <FiLogOut />
