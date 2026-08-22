@@ -7,6 +7,8 @@ import {
   FiArrowRight,
   FiBriefcase,
   FiCheckCircle,
+  FiEye,
+  FiEyeOff,
   FiKey,
   FiMapPin,
   FiPackage,
@@ -681,18 +683,41 @@ const TextInput = ({
   onChange: (value: string) => void;
   type?: string;
   inputMode?: 'numeric';
-}) => (
-  <label className="block">
-    <span className="text-sm font-black text-neutral-700">{label}</span>
-    <input
-      type={type}
-      inputMode={inputMode}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="mt-2 min-h-13 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-semibold outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-    />
-  </label>
-);
+}) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  const effectiveType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
+  return (
+    <label className="block">
+      <span className="text-sm font-black text-neutral-700">{label}</span>
+      <div className="relative mt-2 flex items-center">
+        <input
+          type={effectiveType}
+          inputMode={inputMode}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={`min-h-13 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-semibold outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 ${
+            isPassword ? 'pr-11' : ''
+          }`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setShowPassword((prev) => !prev);
+            }}
+            className="absolute right-3.5 flex items-center justify-center text-neutral-500 transition hover:text-neutral-900 focus:outline-none"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+          </button>
+        )}
+      </div>
+    </label>
+  );
+};
 
 const TextArea = ({label, value, onChange}: {label: string; value: string; onChange: (value: string) => void}) => (
   <label className="block">

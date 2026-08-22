@@ -7,6 +7,8 @@ import {findUserByContact, readAuthStore, upsertUser, writeAuthStore} from '@/sr
 import type {AuthUserRecord} from '@/src/features/commerce/server/auth/types';
 import type {CommerceUserRole, MerchantOnboardingAnswers} from '@/src/features/commerce/types/auth';
 
+import { db } from '@/src/features/commerce/server/db/jsonRepository';
+
 export const runtime = 'nodejs';
 
 type RegisterStartBody = {
@@ -72,6 +74,35 @@ export async function POST(request: Request) {
       ...store.otpChallenges.filter((challenge) => challenge.userId !== user.id)
     ]
   });
+
+  // Automatically insert into JSON Database files (customers.json / merchants.json)
+  if (role === 'customer') {
+    await db.customers.insert({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      contact: user.contact,
+      contactType: user.contactType,
+      mobile: user.mobile ?? null,
+      email: user.email ?? null,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    });
+  } else {
+    await db.merchants.insert({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      contact: user.contact,
+      contactType: user.contactType,
+      mobile: user.mobile ?? null,
+      email: user.email ?? null,
+      businessName: user.businessName,
+      merchantSetup: user.merchantSetup,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    });
+  }
 
   return NextResponse.json({
     ok: true,

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "cust_001",
+    "role": "customer",
+    "name": "Chileshe Kapwepwe",
+    "username": "@chileshe",
+    "contact": "+260977111001",
+    "contactType": "mobile",
+    "mobile": "+260977111001",
+    "email": null,
+    "createdAt": "2026-08-01T10:00:00.000Z",
+    "updatedAt": "2026-08-01T10:00:00.000Z"
+  },
+  {
+    "id": "cust_002",
+    "role": "customer",
+    "name": "Mwamba Bwalya",
+    "username": "@mwamba",
+    "contact": "mwamba@example.zm",
+    "contactType": "email",
+    "mobile": null,
+    "email": "mwamba@example.zm",
+    "createdAt": "2026-08-02T11:30:00.000Z",
+    "updatedAt": "2026-08-02T11:30:00.000Z"
+  },
+  {
+    "id": "cust_003",
+    "role": "customer",
+    "name": "Thandiwe Phiri",
+    "username": "@thandiwe",
+    "contact": "+260966222002",
+    "contactType": "mobile",
+    "mobile": "+260966222002",
+    "email": null,
+    "createdAt": "2026-08-03T14:15:00.000Z",
+    "updatedAt": "2026-08-03T14:15:00.000Z"
+  },
+  {
+    "id": "cust_004",
+    "role": "customer",
+    "name": "Kondwani Tembo",
+    "username": "@kondwani",
+    "contact": "kondwani@example.zm",
+    "contactType": "email",
+    "mobile": null,
+    "email": "kondwani@example.zm",
+    "createdAt": "2026-08-04T09:45:00.000Z",
+    "updatedAt": "2026-08-04T09:45:00.000Z"
+  },
+  {
+    "id": "cust_005",
+    "role": "customer",
+    "name": "Mutale Musonda",
+    "username": "@mutale",
+    "contact": "+260955333003",
+    "contactType": "mobile",
+    "mobile": "+260955333003",
+    "email": null,
+    "createdAt": "2026-08-05T16:20:00.000Z",
+    "updatedAt": "2026-08-05T16:20:00.000Z"
+  }
+]
