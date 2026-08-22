@@ -50,8 +50,8 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ['var(--font-aicos-body)', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        display: ['var(--font-aicos-heading)', 'var(--font-aicos-body)', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif']
+        sans: ['var(--font-aicos-body)', 'sans-serif'],
+        display: ['var(--font-aicos-heading)', 'var(--font-aicos-body)', 'sans-serif']
       },
       boxShadow: {
         'zam-sm': '0 1px 4px rgba(26,20,16,0.08)',

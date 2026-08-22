@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Alata, Jost } from 'next/font/google';
+import { DM_Sans, Jost } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
@@ -9,19 +9,18 @@ import messages from '@/messages/en.json';
 
 // Swap these initializers when the final brand fonts are chosen.
 // next/font self-hosts the generated files, preloads them, and uses font-display: swap.
-const aicosHeading = Alata({
+const aicosHeading = DM_Sans({
   subsets: ['latin'],
-  weight: '400',
   display: 'swap',
   variable: '--font-aicos-heading',
-  fallback: ['Arial', 'Helvetica', 'sans-serif']
+  // fallback: ['Arial', 'Helvetica', 'sans-serif']
 });
 
 const aicosBody = Jost({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-aicos-body',
-  fallback: ['Arial', 'Helvetica', 'sans-serif']
+  // fallback: ['Arial', 'Helvetica', 'sans-serif']
 });
 
 export const metadata: Metadata = {

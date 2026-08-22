@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import type {ReactNode} from 'react';
-import {useState} from 'react';
-import {FiBox, FiClock, FiCreditCard, FiLogOut, FiMessageCircle, FiPackage, FiShield, FiTrendingUp} from 'react-icons/fi';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { FiBox, FiClock, FiCreditCard, FiLogOut, FiMessageCircle, FiPackage, FiShield, FiTrendingUp } from 'react-icons/fi';
 
-import {merchantDashboardSeed} from '../data/merchantExperience';
-import {initialOrders} from '../data/mockCommerce';
-import {findProduct, findSeller, formatKwacha, getNextOrderStatus, getStatusLabel} from '../lib/commerceLogic';
-import {readOrders, saveOrders} from '../services/orderService';
-import type {Order} from '../types/commerce';
-import {AuthFlow, type CommerceSession} from './AuthFlow';
+import { merchantDashboardSeed } from '../data/merchantExperience';
+import { initialOrders } from '../data/mockCommerce';
+import { findProduct, findSeller, formatKwacha, getNextOrderStatus, getStatusLabel } from '../lib/commerceLogic';
+import { readOrders, saveOrders } from '../services/orderService';
+import type { Order } from '../types/commerce';
+import { AuthFlow, type CommerceSession } from './AuthFlow';
 
 export const MerchantOrdersPageClient = () => {
   const [session, setSession] = useState<CommerceSession | null>(null);
@@ -43,10 +43,10 @@ export const MerchantOrdersPageClient = () => {
     const nextOrders = orders.map((item) =>
       item.id === order.id
         ? {
-            ...item,
-            status: reject ? 'cancelled' : getNextOrderStatus(item.status),
-            updatedAt: new Date().toISOString()
-          }
+          ...item,
+          status: reject ? 'cancelled' : getNextOrderStatus(item.status),
+          updatedAt: new Date().toISOString()
+        }
         : item
     );
     setOrders(nextOrders);
@@ -61,24 +61,23 @@ export const MerchantOrdersPageClient = () => {
           <h1 className="mt-1 text-3xl font-black">{session.businessName ?? session.name}</h1>
           <nav className="mt-8 grid gap-2" aria-label="Merchant sections">
             {[
-              {id: 'orders', label: 'Orders', Icon: FiPackage},
-              {id: 'inventory', label: 'Inventory', Icon: FiBox},
-              {id: 'support', label: 'Support', Icon: FiMessageCircle}
-            ].map(({id, label, Icon}) => (
+              { id: 'orders', label: 'Orders', Icon: FiPackage },
+              { id: 'inventory', label: 'Inventory', Icon: FiBox },
+              { id: 'support', label: 'Support', Icon: FiMessageCircle }
+            ].map(({ id, label, Icon }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setSelectedView(id as typeof selectedView)}
-                className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 text-left font-black transition ${
-                  selectedView === id ? 'bg-neutral-950 text-white' : 'text-neutral-600 hover:bg-neutral-100'
-                }`}
+                className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 text-left font-black transition ${selectedView === id ? 'bg-neutral-950 text-white' : 'text-neutral-600 hover:bg-neutral-100'
+                  }`}
               >
                 <Icon />
                 {label}
               </button>
             ))}
           </nav>
-          <Link href="/discover" className="mt-8 flex min-h-12 items-center justify-center rounded-2xl bg-emerald-50 font-black text-emerald-800">
+          <Link href="/discover" className="mt-8 flex min-h-12 items-center justify-center rounded-2xl bg-emerald-50 font-black">
             Customer app
           </Link>
         </aside>
@@ -86,23 +85,23 @@ export const MerchantOrdersPageClient = () => {
         <section className="min-w-0 pb-20">
           <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 p-4 backdrop-blur lg:px-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <Link href="/discover" className="text-sm font-black text-neutral-500">Back to customer app</Link>
-              <h1 className="mt-2 text-3xl font-black">Merchant workspace</h1>
-              <p className="mt-1 text-sm text-neutral-500">
-                {session.businessName ?? session.name} - {session.onboarded ? 'onboarded merchant workspace' : 'logged in merchant workspace'}
-              </p>
+              <div>
+                <Link href="/discover" className="text-sm font-black text-neutral-500">Back to customer app</Link>
+                <h1 className="mt-2 text-3xl font-black">Merchant workspace</h1>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {session.businessName ?? session.name} - {session.onboarded ? 'onboarded merchant workspace' : 'logged in merchant workspace'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSession(null)}
+                className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-neutral-200 px-4 font-black text-neutral-600 transition hover:bg-neutral-100"
+              >
+                <FiLogOut />
+                Logout
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setSession(null)}
-              className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-neutral-200 px-4 font-black text-neutral-600 transition hover:bg-neutral-100"
-            >
-              <FiLogOut />
-              Logout
-            </button>
-          </div>
-        </header>
+          </header>
 
           <section className="mx-auto max-w-7xl space-y-4 p-4 lg:p-8">
             {session.merchantSetup ? (
@@ -127,9 +126,9 @@ export const MerchantOrdersPageClient = () => {
 
             <div className="grid grid-cols-3 gap-2 lg:hidden">
               {[
-                {id: 'orders', label: 'Orders'},
-                {id: 'inventory', label: 'Inventory'},
-                {id: 'support', label: 'Support'}
+                { id: 'orders', label: 'Orders' },
+                { id: 'inventory', label: 'Inventory' },
+                { id: 'support', label: 'Support' }
               ].map((item) => (
                 <button key={item.id} type="button" onClick={() => setSelectedView(item.id as typeof selectedView)} className={`rounded-2xl px-3 py-3 text-sm font-black ${selectedView === item.id ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-600'}`}>
                   {item.label}
@@ -147,7 +146,7 @@ export const MerchantOrdersPageClient = () => {
   );
 };
 
-const MerchantOrderQueue = ({orders, updateOrder}: {orders: Order[]; updateOrder: (order: Order, reject?: boolean) => void}) => (
+const MerchantOrderQueue = ({ orders, updateOrder }: { orders: Order[]; updateOrder: (order: Order, reject?: boolean) => void }) => (
   <section className="space-y-4">
     <div className="rounded-3xl bg-white p-5 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Fulfilment queue</p>
@@ -242,7 +241,7 @@ const MerchantSupport = () => (
   </section>
 );
 
-const MerchantMetric = ({icon, label, value}: {icon: ReactNode; label: string; value: string}) => (
+const MerchantMetric = ({ icon, label, value }: { icon: ReactNode; label: string; value: string }) => (
   <div className="rounded-3xl bg-white p-4 shadow-sm">
     <div className="text-emerald-700">{icon}</div>
     <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-neutral-500">{label}</p>
@@ -250,14 +249,14 @@ const MerchantMetric = ({icon, label, value}: {icon: ReactNode; label: string; v
   </div>
 );
 
-const MerchantSetupTile = ({label, value}: {label: string; value: string}) => (
+const MerchantSetupTile = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl bg-white/10 p-4">
     <p className="text-xs font-black uppercase tracking-[0.12em] text-neutral-400">{label}</p>
     <p className="mt-1 text-sm font-black leading-5 text-white">{value}</p>
   </div>
 );
 
-const Info = ({label, value}: {label: string; value: string}) => (
+const Info = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl bg-neutral-100 p-3">
     <p className="text-xs font-black uppercase tracking-[0.12em] text-neutral-500">{label}</p>
     <p className="mt-1 truncate font-black capitalize">{value}</p>
