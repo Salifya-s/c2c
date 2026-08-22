@@ -105,6 +105,19 @@ export const MerchantOrdersPageClient = () => {
         </header>
 
           <section className="mx-auto max-w-7xl space-y-4 p-4 lg:p-8">
+            {session.merchantSetup ? (
+              <section className="rounded-3xl bg-neutral-950 p-5 text-white shadow-sm">
+                <p className="text-sm font-black text-emerald-200">Onboarding complete</p>
+                <h2 className="mt-1 text-3xl font-black">{session.merchantSetup.businessName}</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">{session.merchantSetup.shortDescription}</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <MerchantSetupTile label="First offer" value={`${session.merchantSetup.mainOffer} from K${session.merchantSetup.startingPrice}`} />
+                  <MerchantSetupTile label="Service area" value={session.merchantSetup.serviceArea} />
+                  <MerchantSetupTile label="Order style" value={session.merchantSetup.fulfilment.join(', ')} />
+                </div>
+              </section>
+            ) : null}
+
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <MerchantMetric icon={<FiTrendingUp />} label="Today revenue" value={formatKwacha(merchantDashboardSeed.todayRevenue)} />
               <MerchantMetric icon={<FiShield />} label="Protected funds" value={formatKwacha(merchantDashboardSeed.protectedFunds)} />
@@ -234,6 +247,13 @@ const MerchantMetric = ({icon, label, value}: {icon: ReactNode; label: string; v
     <div className="text-emerald-700">{icon}</div>
     <p className="mt-3 text-xs font-black uppercase tracking-[0.12em] text-neutral-500">{label}</p>
     <p className="mt-1 text-2xl font-black">{value}</p>
+  </div>
+);
+
+const MerchantSetupTile = ({label, value}: {label: string; value: string}) => (
+  <div className="rounded-2xl bg-white/10 p-4">
+    <p className="text-xs font-black uppercase tracking-[0.12em] text-neutral-400">{label}</p>
+    <p className="mt-1 text-sm font-black leading-5 text-white">{value}</p>
   </div>
 );
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Alata, Google_Sans } from 'next/font/google';
+import { Alata, Jost } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
@@ -17,9 +17,8 @@ const aicosHeading = Alata({
   fallback: ['Arial', 'Helvetica', 'sans-serif']
 });
 
-const aicosBody = Google_Sans({
+const aicosBody = Jost({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-aicos-body',
   fallback: ['Arial', 'Helvetica', 'sans-serif']

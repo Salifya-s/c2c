@@ -12,7 +12,8 @@ This is a working prototype for the AI Commerce Operating System described in th
 
 ## What the Prototype Does
 
-- Simulated customer and merchant login/onboarding flows with role switching and logout.
+- Simulated customer login and simplified merchant onboarding flows with role switching and logout.
+- Guided merchant setup interview that asks plain-language questions about owner details, store category, first offer, pricing, service area, fulfilment, payments, trust settings, and brand tone.
 - Mobile-first customer discovery with realistic Zambian merchant examples.
 - Category discovery cards with icon placeholders, active states, and hover transformation effects.
 - Rule-based conversational ordering for availability, pricing, delivery, trust, and escrow questions.
@@ -89,6 +90,7 @@ Main customer commerce feature area. It keeps UI, mock data, logic, and shared t
 - `components/MerchantOrdersPageClient.tsx` - Merchant login/onboarding gate plus dashboard, fulfilment queue, inventory signal view, support preview, and simulated acceptance, rejection, and fulfilment status changes.
 - `data/customerExperience.ts` - Replaceable customer UX data for suggestions, category cards, filter locations, profile seed fields, and recent conversations.
 - `data/merchantExperience.ts` - Replaceable merchant dashboard seed data for metrics, low-stock threshold, and support queue examples.
+- `data/merchantOnboarding.ts` - Replaceable merchant onboarding options for categories, fulfilment methods, payment choices, trust settings, tone, and launch checklist.
 - `data/mockCommerce.ts` - Mock sellers, products, delivery slots, and initial orders used by the customer experience.
 - `lib/commerceLogic.ts` - Reusable business functions for currency formatting, seller/product lookup, cart totals, trust scoring, order status progression, order creation, and chatbot replies.
 - `services/searchService.ts` - Deterministic keyword/natural-language parser plus local ranking for products and merchants.
@@ -160,13 +162,14 @@ Shared support for the retained hub and auth routes.
 ## Current UX Progress
 
 - Customer entry: `/discover` opens with a simulated customer login/onboarding flow. Selecting merchant redirects into the merchant workspace.
-- Merchant entry: `/merchant/orders` opens with a simulated merchant login/onboarding flow. Selecting customer redirects back to the customer app.
+- Merchant entry: `/merchant/orders` opens with a simplified guided merchant setup interview. It generates a launch-ready store summary and carries the answers into the merchant workspace.
 - Discover: search, suggestions, filters, category cards, merchant cards, product cards, and multi-merchant add-to-cart are working against local mock data.
 - Cart: the bottom-right floating cart button opens saved carts grouped by merchant. Each merchant group can resume checkout independently while other store carts remain saved.
 - Chat: only the recent chat list is displayed first. Selecting a chat opens a full-screen conversation detail within the app shell.
 - Orders: only the recent order list is displayed first. Selecting an order opens a full-screen detail view within the app shell. The help button is intentionally a placeholder for now.
 - Profile: customer personal information and order history are shown from the simulated session and mock order state.
 - Merchant workspace: dashboard metrics, order queue, inventory view, and support preview are implemented as a scaffold for future deeper merchant tools.
+- Merchant onboarding: currently stores answers in the in-memory session only. A backend should persist these answers as merchant profile, catalog draft, fulfilment settings, payment preferences, and trust-policy records.
 
 ## Data and Future Backend Swap Points
 
