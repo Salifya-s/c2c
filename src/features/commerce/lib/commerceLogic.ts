@@ -34,7 +34,7 @@ export const calculateTrustScore = (seller: Seller) => {
 
 const statusFlow: OrderStatus[] = [
   'pending_payment',
-  'paid',
+  'paid_in_escrow',
   'awaiting_merchant_acceptance',
   'accepted',
   'preparing',
@@ -44,34 +44,56 @@ const statusFlow: OrderStatus[] = [
   'picked_up',
   'out_for_delivery',
   'delivered',
+  'pin_verified',
   'completed'
 ];
 
+/**
+ * `paid` is the legacy alias of `paid_in_escrow`. Orders persisted in
+ * localStorage before the escrow statuses existed still carry it, so it is
+ * normalised on read rather than migrated.
+ */
+export const normaliseStatus = (status: OrderStatus): OrderStatus => (status === 'paid' ? 'paid_in_escrow' : status);
+
 export const getNextOrderStatus = (status: OrderStatus) => {
-  const index = statusFlow.indexOf(status);
+  const current = normaliseStatus(status);
+  const index = statusFlow.indexOf(current);
+
+  // Terminal ('completed', 'cancelled', 'disputed') and off-flow statuses are not
+  // in statusFlow. Hold them where they are instead of falling through to index 0,
+  // which would send a cancelled order back to 'pending_payment'.
+  if (index === -1) return current;
+
   return statusFlow[Math.min(index + 1, statusFlow.length - 1)];
 };
 
-export const getStatusLabel = (status: OrderStatus) =>
-  ({
-    created: 'Created',
-    pending_payment: 'Pending payment',
-    paid: 'Paid into escrow',
-    awaiting_merchant_acceptance: 'Waiting for merchant confirmation',
-    accepted: 'Accepted',
-    preparing: 'Preparing',
-    ready: 'Ready',
-    ready_for_pickup: 'Ready for pickup',
-    courier_requested: 'Courier requested',
-    courier_assigned: 'Courier assigned',
-    picked_up: 'Picked up',
-    in_delivery: 'Out for delivery',
-    out_for_delivery: 'On the way',
-    delivered: 'Delivered',
-    completed: 'Funds released',
-    cancelled: 'Cancelled',
-    disputed: 'Disputed'
-  })[status];
+/**
+ * Exhaustive by construction: `satisfies` makes a missing entry a compile error
+ * rather than an `undefined` label at runtime.
+ */
+const statusLabels = {
+  created: 'Created',
+  pending_payment: 'Pending payment',
+  paid: 'Paid into escrow',
+  paid_in_escrow: 'Paid into escrow',
+  awaiting_merchant_acceptance: 'Waiting for merchant confirmation',
+  accepted: 'Accepted',
+  preparing: 'Preparing',
+  ready: 'Ready',
+  ready_for_pickup: 'Ready for pickup',
+  courier_requested: 'Courier requested',
+  courier_assigned: 'Courier assigned',
+  picked_up: 'Picked up',
+  in_delivery: 'Out for delivery',
+  out_for_delivery: 'On the way',
+  delivered: 'Delivered',
+  pin_verified: 'PIN verified',
+  completed: 'Funds released',
+  cancelled: 'Cancelled',
+  disputed: 'Disputed'
+} satisfies Record<OrderStatus, string>;
+
+export const getStatusLabel = (status: OrderStatus) => statusLabels[status];
 
 export const createOrderFromCart = (
   cart: CartLine[],

@@ -5,13 +5,13 @@ import {useMemo, useState} from 'react';
 import {FiAlertCircle, FiCheckCircle, FiClock, FiCreditCard, FiPackage, FiShield, FiShoppingBag, FiTruck} from 'react-icons/fi';
 
 import {initialOrders} from '../data/mockCommerce';
-import {findProduct, findSeller, formatKwacha, getNextOrderStatus, getStatusLabel} from '../lib/commerceLogic';
+import {findProduct, findSeller, formatKwacha, getNextOrderStatus, getStatusLabel, normaliseStatus} from '../lib/commerceLogic';
 import {readOrders, saveOrders} from '../services/orderService';
 import type {Order, OrderStatus} from '../types/commerce';
 
 const timeline: Array<{status: OrderStatus; label: string; detail: string; Icon: typeof FiClock}> = [
-  {status: 'paid', label: 'Order placed', detail: 'The order was created after simulated payment.', Icon: FiShoppingBag},
-  {status: 'paid', label: 'Payment protected', detail: 'Funds are marked as protected in this prototype.', Icon: FiShield},
+  {status: 'paid_in_escrow', label: 'Order placed', detail: 'The order was created after simulated payment.', Icon: FiShoppingBag},
+  {status: 'paid_in_escrow', label: 'Payment protected', detail: 'Funds are marked as protected in this prototype.', Icon: FiShield},
   {status: 'awaiting_merchant_acceptance', label: 'Waiting for merchant confirmation', detail: 'The merchant can accept or reject this order.', Icon: FiClock},
   {status: 'accepted', label: 'Merchant accepted the order', detail: 'Your order is confirmed by the seller.', Icon: FiCheckCircle},
   {status: 'preparing', label: 'Preparing your order', detail: 'The merchant is preparing your items.', Icon: FiPackage},
@@ -29,7 +29,7 @@ export const OrderTrackingPageClient = ({orderId, confirmed = false}: {orderId: 
 
   const currentIndex = useMemo(() => {
     if (!order) return 0;
-    const index = timeline.map((item) => item.status).lastIndexOf(order.status);
+    const index = timeline.map((item) => item.status).lastIndexOf(normaliseStatus(order.status));
     return Math.max(0, index);
   }, [order]);
 

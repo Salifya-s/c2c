@@ -44,7 +44,7 @@ export const createProtectedOrder = (input: {
     paymentStatus: input.payment.status,
     transactionReference: input.payment.transactionReference,
     protectionStatus: input.payment.status === 'paid' ? 'funds_protected' : 'not_required',
-    status: input.payment.status === 'pay_on_pickup' ? 'awaiting_merchant_acceptance' : 'paid',
+    status: input.payment.status === 'pay_on_pickup' ? 'awaiting_merchant_acceptance' : 'paid_in_escrow',
     escrowPin: String(Math.floor(1000 + Math.random() * 9000)),
     paidAt: new Date().toLocaleTimeString('en-ZM', {hour: '2-digit', minute: '2-digit'}),
     createdAt: now,
