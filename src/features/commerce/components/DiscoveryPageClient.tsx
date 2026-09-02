@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import type {Dispatch, ReactNode, SetStateAction} from 'react';
+import type {Dispatch, SetStateAction} from 'react';
 import {useMemo, useState} from 'react';
 import {
   FiAlertCircle,
   FiArrowLeft,
-  FiChevronDown,
+  FiChevronRight,
   FiClock,
   FiHome,
   FiLogOut,
@@ -20,18 +20,45 @@ import {
   FiUser
 } from 'react-icons/fi';
 
+import {Badge} from '@/src/components/ui/badge';
+import {Button} from '@/src/components/ui/button';
+import {Card} from '@/src/components/ui/card';
+import {Input} from '@/src/components/ui/input';
+import {Label} from '@/src/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/src/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle
+} from '@/src/components/ui/sheet';
+import {Skeleton} from '@/src/components/ui/skeleton';
+import {cn} from '@/src/lib/cn';
+
 import {customerFilterLocations, customerProfileSeed, discoveryCategoryCards, discoverySuggestions, recentConversations} from '../data/customerExperience';
 import {initialOrders, sellers} from '../data/mockCommerce';
-import {calculateTrustScore, findProduct, findSeller, formatKwacha, getStatusLabel} from '../lib/commerceLogic';
+import {calculateTrustScore, findProduct, findSeller, formatKwacha} from '../lib/commerceLogic';
 import {addCartItem, getCartItemCount, getMerchantCartQuantity, readMultiCart, saveMultiCart, setActiveMerchantCart} from '../services/cartService';
 import {readOrders} from '../services/orderService';
 import {searchCommerce} from '../services/searchService';
 import type {DiscoveryFilters, MultiMerchantCartState, ProductResult} from '../types/commerce';
 import {AuthFlow, type CommerceSession} from './AuthFlow';
+import {AppShell, EmptyState, Metric, Money, ProductThumb, StatusBadge, type ShellNavItem} from './shared';
 
 type CustomerTab = 'discover' | 'chat' | 'orders' | 'profile';
 
-const tabs: Array<{id: CustomerTab; label: string; Icon: typeof FiHome}> = [
+/** Radix Select reserves the empty string, so "any location" needs a sentinel. */
+const ANY_LOCATION = 'all';
+
+const tabs: ShellNavItem<CustomerTab>[] = [
   {id: 'discover', label: 'Discover', Icon: FiHome},
   {id: 'chat', label: 'Chat', Icon: FiMessageCircle},
   {id: 'orders', label: 'Orders', Icon: FiPackage},
@@ -97,123 +124,101 @@ export const DiscoveryPageClient = () => {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-100 text-neutral-950">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="hidden border-r border-neutral-200 bg-white p-5 lg:block">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AICOS</p>
-            <h1 className="mt-1 text-3xl font-black">ZamComm</h1>
-          </div>
-          <nav className="mt-8 grid gap-2" aria-label="Customer sections">
-            {tabs.map(({id, label, Icon}) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setActiveTab(id)}
-                className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 text-left font-black transition ${
-                  activeTab === id ? 'bg-neutral-950 text-white' : 'text-neutral-600 hover:bg-neutral-100'
-                }`}
-              >
-                <Icon size={20} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
-          <div className="mt-8 rounded-3xl bg-emerald-50 p-4">
-            <p className="font-black text-emerald-950">Payment protection simulation</p>
-            <p className="mt-1 text-sm leading-6 text-emerald-800">Track protected orders from discovery to delivery without leaving the platform.</p>
-          </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 font-black text-neutral-600 transition hover:bg-neutral-100"
-          >
-            <FiLogOut />
+    <AppShell
+      brand={{eyebrow: 'AICOS', title: 'ZamComm'}}
+      nav={tabs}
+      activeId={activeTab}
+      onNavigate={setActiveTab}
+      header={{
+        eyebrow: 'Customer app',
+        title: tabs.find((tab) => tab.id === activeTab)?.label ?? 'Discover',
+        subtitle: `${session.name} - ${session.onboarded ? 'onboarded' : 'logged in'}`,
+        actions: (
+          <>
+            <CartButton count={cartCount} onClick={() => setCartDrawerOpen(true)} />
+            <Button type="button" variant="outline" size="icon" onClick={logout} aria-label="Logout">
+              <FiLogOut aria-hidden />
+            </Button>
+          </>
+        )
+      }}
+      sidebarFooter={
+        <div className="grid gap-3">
+          <Card className="gap-1 rounded-lg border-border/50 bg-primary/5 p-3 shadow-none">
+            <p className="text-sm font-medium text-primary">Payment protection</p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Track protected orders from discovery to delivery without leaving the platform.
+            </p>
+          </Card>
+          <Button type="button" variant="outline" className="h-10 justify-center gap-2" onClick={logout}>
+            <FiLogOut aria-hidden />
             Logout
-          </button>
-        </aside>
+          </Button>
+        </div>
+      }
+      overlay={
+        <>
+          <Button
+            type="button"
+            onClick={() => setCartDrawerOpen(true)}
+            aria-label={`Open saved carts, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+            className="fixed bottom-20 right-4 z-30 size-12 rounded-full p-0 shadow-lg lg:bottom-6"
+          >
+            <FiShoppingBag aria-hidden size={20} />
+            <CartCount count={cartCount} />
+          </Button>
+          <CartDrawer
+            open={cartDrawerOpen}
+            onOpenChange={setCartDrawerOpen}
+            cart={multiCart}
+            onRefresh={refreshCart}
+          />
+        </>
+      }
+    >
+      {activeTab === 'discover' ? (
+        <DiscoverTab
+          query={query}
+          setQuery={setQuery}
+          filters={filters}
+          setFilters={setFilters}
+          loading={loading}
+          error={error}
+          cartMessage={cartMessage}
+          results={results}
+          runSearch={runSearch}
+          addResultToCart={addResultToCart}
+        />
+      ) : null}
 
-        <section className="min-w-0 pb-24 lg:pb-0">
-          <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 p-4 backdrop-blur lg:px-8">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Customer app</p>
-              <h1 className="text-2xl font-black lg:text-4xl">
-                {tabs.find((tab) => tab.id === activeTab)?.label}
-              </h1>
-              <p className="mt-1 text-sm font-semibold text-neutral-500">{session.name} {session.onboarded ? '- onboarded' : '- logged in'}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={logout} className="rounded-full border border-neutral-200 bg-white p-3" aria-label="Logout">
-                <FiLogOut />
-              </button>
-              <button type="button" onClick={() => setCartDrawerOpen(true)} className="relative rounded-full border border-neutral-200 bg-white p-3" aria-label="Open cart">
-                <FiShoppingBag />
-                {cartCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 grid h-6 w-6 place-items-center rounded-full bg-amber-500 text-xs font-black text-neutral-950">
-                    {cartCount}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          </div>
-        </header>
-
-          {activeTab === 'discover' ? (
-            <DiscoverTab
-              query={query}
-              setQuery={setQuery}
-              filters={filters}
-              setFilters={setFilters}
-              loading={loading}
-              error={error}
-              cartMessage={cartMessage}
-              results={results}
-              runSearch={runSearch}
-              addResultToCart={addResultToCart}
-            />
-          ) : null}
-
-          {activeTab === 'chat' ? <ChatTab /> : null}
-          {activeTab === 'orders' ? <OrdersTab /> : null}
-          {activeTab === 'profile' ? <ProfileTab session={session} /> : null}
-        </section>
-
-        <button
-          type="button"
-          onClick={() => setCartDrawerOpen(true)}
-          className="fixed bottom-24 right-4 z-30 grid h-16 w-16 place-items-center rounded-full bg-neutral-950 text-white shadow-xl transition hover:-translate-y-1 lg:bottom-6"
-          aria-label="Open saved carts"
-        >
-          <FiShoppingBag size={24} />
-          {cartCount > 0 ? (
-            <span className="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full bg-amber-500 text-sm font-black text-neutral-950">
-              {cartCount}
-            </span>
-          ) : null}
-        </button>
-
-        {cartDrawerOpen ? <CartDrawer cart={multiCart} onClose={() => setCartDrawerOpen(false)} onRefresh={refreshCart} /> : null}
-
-        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden" aria-label="Customer tabs">
-          {tabs.map(({id, label, Icon}) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveTab(id)}
-              className={`grid justify-items-center gap-1 rounded-2xl px-2 py-2 text-xs font-black ${
-                activeTab === id ? 'text-neutral-950' : 'text-neutral-400'
-              }`}
-            >
-              <Icon size={22} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-      </div>
-    </main>
+      {activeTab === 'chat' ? <ChatTab /> : null}
+      {activeTab === 'orders' ? <OrdersTab /> : null}
+      {activeTab === 'profile' ? <ProfileTab session={session} /> : null}
+    </AppShell>
   );
 };
+
+/** Count bubble shared by the header button and the floating action button. */
+const CartCount = ({count}: {count: number}) =>
+  count > 0 ? (
+    <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-accent-foreground text-[0.625rem] font-semibold text-background">
+      {count}
+    </span>
+  ) : null;
+
+const CartButton = ({count, onClick}: {count: number; onClick: () => void}) => (
+  <Button
+    type="button"
+    variant="outline"
+    size="icon"
+    onClick={onClick}
+    className="relative"
+    aria-label={`Open cart, ${count} item${count === 1 ? '' : 's'}`}
+  >
+    <FiShoppingBag aria-hidden />
+    <CartCount count={count} />
+  </Button>
+);
 
 type DiscoverTabProps = {
   query: string;
@@ -240,8 +245,8 @@ const DiscoverTab = ({
   runSearch,
   addResultToCart
 }: DiscoverTabProps) => (
-  <section className="mx-auto grid w-full max-w-7xl gap-6 p-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-8">
-    <div className="space-y-4">
+  <section className="mx-auto grid w-full max-w-7xl gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:p-6">
+    <div className="min-w-0 space-y-4">
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -249,243 +254,375 @@ const DiscoverTab = ({
           runSearch();
         }}
       >
-        <label className="flex min-h-14 flex-1 items-center gap-2 rounded-2xl bg-white px-4 shadow-sm">
-          <FiSearch className="text-neutral-500" />
-          <input
+        <div className="relative flex-1">
+          <FiSearch aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="What are you looking for today?"
-            className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-neutral-400"
+            aria-label="Search products and merchants"
+            className="h-10 pl-9"
           />
-        </label>
-        <button type="submit" className="rounded-2xl bg-neutral-950 px-5 text-sm font-black text-white">
+        </div>
+        <Button type="submit" className="h-10">
           Search
-        </button>
+        </Button>
       </form>
 
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {discoverySuggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => {
-                  setQuery(suggestion);
-                  runSearch(suggestion);
-                }}
-                className="shrink-0 rounded-full border border-neutral-200 px-3 py-2 text-sm font-bold"
-              >
-                {suggestion}
-              </button>
-            ))}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {discoverySuggestions.map((suggestion) => (
+          <button
+            key={suggestion}
+            type="button"
+            onClick={() => {
+              setQuery(suggestion);
+              runSearch(suggestion);
+            }}
+            className="shrink-0 rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
+
+      <section>
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Browse by need</p>
+            <h2 className="font-display text-base font-semibold">Categories</h2>
           </div>
-
-          <section className="rounded-3xl bg-white p-4 shadow-sm">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Browse by need</p>
-                <h2 className="mt-1 text-xl font-black">Categories</h2>
-              </div>
-              {filters.category ? (
-                <button type="button" onClick={() => setFilters((current) => ({...current, category: undefined}))} className="text-sm font-black text-emerald-700">
-                  Clear
-                </button>
-              ) : null}
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {discoveryCategoryCards.map(({id, label, helper, Icon, accent}) => {
-                const isActive = filters.category === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setFilters((current) => ({...current, category: current.category === id ? undefined : id}))}
-                    className={`group relative min-h-32 overflow-hidden rounded-3xl border p-4 text-left transition duration-300 hover:-translate-y-1 hover:shadow-lg ${
-                      isActive ? 'border-neutral-950 bg-neutral-950 text-white shadow-lg' : 'border-neutral-200 bg-white text-neutral-950 hover:border-neutral-300'
-                    }`}
-                  >
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500 opacity-0 transition group-hover:opacity-100" />
-                    <div className={`grid h-11 w-11 place-items-center rounded-2xl transition group-hover:scale-110 ${isActive ? 'bg-white/10 text-white' : accent}`}>
-                      <Icon size={20} />
-                    </div>
-                    <h3 className="mt-4 font-black">{label}</h3>
-                    <p className={`mt-1 text-sm leading-5 ${isActive ? 'text-neutral-300' : 'text-neutral-500'}`}>{helper}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <div className="grid gap-3 rounded-3xl bg-white p-3 shadow-sm">
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                value={filters.location ?? ''}
-                onChange={(event) => setFilters((current) => ({...current, location: event.target.value || undefined}))}
-                className="rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm font-semibold"
-                aria-label="Location"
-              >
-                <option value="">All locations</option>
-                {customerFilterLocations.map((location) => <option key={location}>{location}</option>)}
-              </select>
-              <input
-                type="number"
-                min="0"
-                value={filters.maxPrice ?? ''}
-                onChange={(event) => setFilters((current) => ({...current, maxPrice: event.target.value ? Number(event.target.value) : undefined}))}
-                placeholder="Max price"
-                className="rounded-2xl border border-neutral-200 px-3 py-3 text-sm font-semibold"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Toggle active={!!filters.verifiedOnly} label="Verified only" onClick={() => setFilters((current) => ({...current, verifiedOnly: !current.verifiedOnly}))} />
-              <Toggle active={!!filters.deliveryOnly} label="Delivery" onClick={() => setFilters((current) => ({...current, deliveryOnly: !current.deliveryOnly}))} />
-            </div>
-          </div>
-
-          {loading ? <SkeletonResults /> : null}
-          {error ? <StateCard icon={<FiAlertCircle />} title="Search failed" body={error} action="Try again" onClick={() => runSearch()} /> : null}
-          {!loading && !error && results.products.length === 0 && results.merchants.length === 0 ? (
-            <StateCard icon={<FiSearch />} title="No matches yet" body="Try a broader search, remove filters, or search by merchant category." />
+          {filters.category ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilters((current) => ({...current, category: undefined}))}
+            >
+              Clear
+            </Button>
           ) : null}
-
-          {cartMessage ? <div className="rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">{cartMessage}</div> : null}
-          <section>
-            <h2 className="text-lg font-black">Merchants</h2>
-            <div className="mt-3 grid gap-3 xl:grid-cols-2">
-              {results.merchants.map((merchant) => (
-                <article key={merchant.id} className="rounded-3xl border border-neutral-200 bg-white p-4">
-                  <div className="flex gap-3">
-                    <div className={`h-20 w-20 shrink-0 rounded-3xl bg-gradient-to-br ${merchant.products[0].imageStyle}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-black">{merchant.name}</h3>
-                          <p className="text-sm text-neutral-500">{merchant.category} - {merchant.location}</p>
-                        </div>
-                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">{calculateTrustScore(merchant)}</span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-neutral-600">
-                        <span className="inline-flex items-center gap-1"><FiShield /> {merchant.verifiedLevel}</span>
-                        <span className="inline-flex items-center gap-1"><FiStar /> {merchant.rating} ({merchant.completedOrders} orders)</span>
-                        <span className="inline-flex items-center gap-1"><FiTruck /> {merchant.deliveryAvailable ? 'Delivery' : 'Pickup only'}</span>
-                      </div>
-                      <Link href={`/merchants/${merchant.id}`} className="mt-3 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-black text-white">
-                        View store
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-black">Products</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {results.products.map((product) => (
-                <article key={`${product.merchant.id}-${product.id}`} className="overflow-hidden rounded-3xl border border-neutral-200 bg-white">
-                  <Link href={`/merchants/${product.merchant.id}?product=${product.id}`} className={`block h-44 bg-gradient-to-br ${product.imageStyle}`} />
-                  <div className="p-4">
-                    <h3 className="font-black">{product.name}</h3>
-                    <p className="text-sm text-neutral-500">{product.merchant.name}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="font-black">{formatKwacha(product.price)}</span>
-                      <span className={`rounded-full px-2 py-1 text-xs font-bold ${product.available !== false && product.stock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                        {product.available !== false && product.stock > 0 ? `${product.stock} available` : 'Unavailable'}
-                      </span>
-                    </div>
-                    <button type="button" onClick={() => addResultToCart(product)} className="mt-3 w-full rounded-2xl bg-amber-500 px-4 py-3 font-black text-neutral-950">
-                      Add to cart
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-    </div>
-    <aside className="space-y-4">
-      <section className="rounded-3xl bg-white p-5 shadow-sm">
-        <p className="text-sm font-black text-neutral-500">Search intent</p>
-        <h2 className="mt-1 text-2xl font-black">{results.intent.category ?? 'All categories'}</h2>
-        <div className="mt-3 grid gap-2 text-sm text-neutral-600">
-          <span>Query: {results.intent.query || 'Browsing all products'}</span>
-          <span>Location: {results.intent.location ?? filters.location ?? 'Any'}</span>
-          <span>Max price: {results.intent.maxPrice ?? filters.maxPrice ? `K${results.intent.maxPrice ?? filters.maxPrice}` : 'Any'}</span>
-          <span>Delivery: {results.intent.deliveryRequired || filters.deliveryOnly ? 'Required' : 'Any'}</span>
-          <span>Verification: {results.intent.verifiedOnly || filters.verifiedOnly ? 'Verified only' : 'Any'}</span>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {discoveryCategoryCards.map(({id, label, helper, Icon}) => {
+            const isActive = filters.category === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setFilters((current) => ({...current, category: current.category === id ? undefined : id}))}
+                className={cn(
+                  'rounded-lg border p-3 text-left transition duration-200 hover:-translate-y-0.5',
+                  'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                  isActive ? 'border-primary bg-primary/5' : 'border-border/50 bg-card hover:border-primary/40'
+                )}
+              >
+                <span className={cn('grid size-9 place-items-center rounded-md', isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-primary')}>
+                  <Icon aria-hidden size={17} />
+                </span>
+                <span className="mt-3 block text-sm font-medium">{label}</span>
+                <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">{helper}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
-      <section className="rounded-3xl bg-neutral-950 p-5 text-white shadow-sm">
-        <p className="font-black">Full-screen customer workspace</p>
-        <p className="mt-2 text-sm leading-6 text-neutral-300">Use the tabs to move from discovery to merchant chats, protected order tracking, and customer profile details.</p>
-      </section>
+
+      <Card className="gap-3 rounded-lg border-border/50 p-3 shadow-none">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="filter-location" className="text-xs text-muted-foreground">
+              Location
+            </Label>
+            <Select
+              value={filters.location ?? ANY_LOCATION}
+              onValueChange={(value) =>
+                setFilters((current) => ({...current, location: value === ANY_LOCATION ? undefined : value}))
+              }
+            >
+              <SelectTrigger id="filter-location" className="mt-1.5 w-full">
+                <SelectValue placeholder="All locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY_LOCATION}>All locations</SelectItem>
+                {customerFilterLocations.map((location) => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="filter-price" className="text-xs text-muted-foreground">
+              Max price
+            </Label>
+            <Input
+              id="filter-price"
+              type="number"
+              min="0"
+              value={filters.maxPrice ?? ''}
+              onChange={(event) =>
+                setFilters((current) => ({...current, maxPrice: event.target.value ? Number(event.target.value) : undefined}))
+              }
+              placeholder="Any"
+              className="mt-1.5 h-9"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <FilterToggle
+            active={!!filters.verifiedOnly}
+            label="Verified only"
+            onClick={() => setFilters((current) => ({...current, verifiedOnly: !current.verifiedOnly}))}
+          />
+          <FilterToggle
+            active={!!filters.deliveryOnly}
+            label="Delivery"
+            onClick={() => setFilters((current) => ({...current, deliveryOnly: !current.deliveryOnly}))}
+          />
+        </div>
+      </Card>
+
+      {loading ? <SkeletonResults /> : null}
+      {error ? (
+        <EmptyState
+          icon={<FiAlertCircle aria-hidden />}
+          title="Search failed"
+          body={error}
+          action="Try again"
+          onAction={() => runSearch()}
+        />
+      ) : null}
+      {!loading && !error && results.products.length === 0 && results.merchants.length === 0 ? (
+        <EmptyState
+          icon={<FiSearch aria-hidden />}
+          title="No matches yet"
+          body="Try a broader search, remove filters, or search by merchant category."
+        />
+      ) : null}
+
+      {cartMessage ? (
+        <p role="status" className="rounded-md bg-success-muted p-3 text-xs text-success">
+          {cartMessage}
+        </p>
+      ) : null}
+
+      {results.merchants.length > 0 ? (
+        <section>
+          <h2 className="font-display text-base font-semibold">Merchants</h2>
+          <div className="mt-3 grid gap-2 xl:grid-cols-2">
+            {results.merchants.map((merchant) => (
+              <Card key={merchant.id} className="gap-0 rounded-lg border-border/50 p-3 shadow-none">
+                <div className="flex gap-3">
+                  <ProductThumb imageStyle={merchant.products[0].imageStyle} className="size-16" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-medium">{merchant.name}</h3>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {merchant.category} - {merchant.location}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="shrink-0 bg-success-muted text-success">
+                        {calculateTrustScore(merchant)}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <FiShield aria-hidden /> {merchant.verifiedLevel}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <FiStar aria-hidden /> {merchant.rating} ({merchant.completedOrders})
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <FiTruck aria-hidden /> {merchant.deliveryAvailable ? 'Delivery' : 'Pickup only'}
+                      </span>
+                    </div>
+                    <Button asChild size="sm" variant="outline" className="mt-3">
+                      <Link href={`/merchants/${merchant.id}`}>View store</Link>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {results.products.length > 0 ? (
+        <section>
+          <h2 className="font-display text-base font-semibold">Products</h2>
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {results.products.map((product) => {
+              const inStock = product.available !== false && product.stock > 0;
+              return (
+                <Card
+                  key={`${product.merchant.id}-${product.id}`}
+                  className="gap-0 overflow-hidden rounded-lg border-border/50 p-0 shadow-none"
+                >
+                  <Link
+                    href={`/merchants/${product.merchant.id}?product=${product.id}`}
+                    aria-label={`View ${product.name}`}
+                  >
+                    <ProductThumb imageStyle={product.imageStyle} radius="md" className="h-32 w-full rounded-none border-0 border-b border-border/50" />
+                  </Link>
+                  <div className="p-3">
+                    <h3 className="truncate text-sm font-medium">{product.name}</h3>
+                    <p className="truncate text-xs text-muted-foreground">{product.merchant.name}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <Money amount={product.price} emphasis="strong" />
+                      <Badge
+                        variant="secondary"
+                        className={cn('shrink-0', inStock ? 'bg-success-muted text-success' : 'bg-destructive/10 text-destructive')}
+                      >
+                        {inStock ? `${product.stock} left` : 'Unavailable'}
+                      </Badge>
+                    </div>
+                    <Button type="button" className="mt-3 h-9 w-full" onClick={() => addResultToCart(product)}>
+                      Add to cart
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+    </div>
+
+    <aside className="space-y-3">
+      <Card className="gap-2 rounded-lg border-border/50 p-4 shadow-none">
+        <div>
+          <p className="text-xs text-muted-foreground">Search intent</p>
+          <h2 className="font-display text-base font-semibold">{results.intent.category ?? 'All categories'}</h2>
+        </div>
+        <dl className="grid gap-1.5 text-xs">
+          <IntentRow label="Query" value={results.intent.query || 'Browsing all products'} />
+          <IntentRow label="Location" value={results.intent.location ?? filters.location ?? 'Any'} />
+          <IntentRow
+            label="Max price"
+            value={
+              results.intent.maxPrice ?? filters.maxPrice
+                ? formatKwacha(results.intent.maxPrice ?? filters.maxPrice ?? 0)
+                : 'Any'
+            }
+          />
+          <IntentRow label="Delivery" value={results.intent.deliveryRequired || filters.deliveryOnly ? 'Required' : 'Any'} />
+          <IntentRow label="Verification" value={results.intent.verifiedOnly || filters.verifiedOnly ? 'Verified only' : 'Any'} />
+        </dl>
+      </Card>
+      <Card className="gap-1 rounded-lg border-0 bg-primary p-4 text-primary-foreground shadow-none">
+        <p className="text-sm font-medium">Full-screen customer workspace</p>
+        <p className="text-xs leading-5 text-primary-foreground/70">
+          Use the tabs to move from discovery to merchant chats, protected order tracking, and customer profile details.
+        </p>
+      </Card>
     </aside>
   </section>
 );
 
-const CartDrawer = ({cart, onClose, onRefresh}: {cart: MultiMerchantCartState; onClose: () => void; onRefresh: () => void}) => (
-  <div className="fixed inset-0 z-40 bg-black/40 p-3">
-    <aside className="ml-auto flex h-full w-full max-w-[440px] flex-col rounded-3xl bg-white shadow-2xl">
-      <header className="border-b border-neutral-200 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Saved carts</p>
-            <h2 className="text-2xl font-black">Fulfil from multiple stores</h2>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-full bg-neutral-100 px-3 py-2 text-sm font-black">
-            Close
-          </button>
-        </div>
-      </header>
+const IntentRow = ({label, value}: {label: string; value: string}) => (
+  <div className="flex items-baseline justify-between gap-3">
+    <dt className="text-muted-foreground">{label}</dt>
+    <dd className="truncate text-right font-medium">{value}</dd>
+  </div>
+);
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+const FilterToggle = ({active, label, onClick}: {active: boolean; label: string; onClick: () => void}) => (
+  <Button
+    type="button"
+    variant={active ? 'default' : 'outline'}
+    size="sm"
+    aria-pressed={active}
+    onClick={onClick}
+    className="h-9"
+  >
+    {label}
+  </Button>
+);
+
+const CartDrawer = ({
+  open,
+  onOpenChange,
+  cart,
+  onRefresh
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  cart: MultiMerchantCartState;
+  onRefresh: () => void;
+}) => (
+  <Sheet open={open} onOpenChange={onOpenChange}>
+    <SheetContent side="right" className="w-full gap-0 sm:max-w-md">
+      <SheetHeader className="border-b border-border/50">
+        <SheetTitle className="font-display text-base">Saved carts</SheetTitle>
+        <SheetDescription className="text-xs">
+          Each store keeps its own cart, so several merchant orders can be fulfilled in parallel.
+        </SheetDescription>
+      </SheetHeader>
+
+      <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {cart.groups.length === 0 ? (
-          <StateCard icon={<FiShoppingBag />} title="No saved carts" body="Add products from any merchant and they will be grouped here by store." />
+          <EmptyState
+            icon={<FiShoppingBag aria-hidden />}
+            title="No saved carts"
+            body="Add products from any merchant and they will be grouped here by store."
+          />
         ) : null}
 
         {cart.groups.map((group) => {
           const merchant = findSeller(group.merchantId);
           const quantity = getMerchantCartQuantity(group);
-          const previewProducts = group.items.slice(0, 2).map((line) => findProduct(merchant, line.productId).name).join(', ');
+          const previewProducts = group.items
+            .slice(0, 2)
+            .map((line) => findProduct(merchant, line.productId).name)
+            .join(', ');
 
           return (
-            <article key={group.merchantId} className="rounded-3xl border border-neutral-200 p-4">
+            <Card key={group.merchantId} className="gap-0 rounded-lg border-border/50 p-3 shadow-none">
               <div className="flex gap-3">
-                <div className={`h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br ${merchant.products[0].imageStyle}`} />
+                <ProductThumb imageStyle={merchant.products[0].imageStyle} className="size-12" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-black">{merchant.name}</h3>
-                  <p className="mt-1 text-sm text-neutral-500">{quantity} item{quantity === 1 ? '' : 's'} - {previewProducts}</p>
-                  <p className="mt-1 text-xs font-bold text-neutral-400">Saved {new Date(group.updatedAt).toLocaleTimeString('en-ZM', {hour: '2-digit', minute: '2-digit'})}</p>
+                  <h3 className="truncate text-sm font-medium">{merchant.name}</h3>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {quantity} item{quantity === 1 ? '' : 's'} - {previewProducts}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Saved {new Date(group.updatedAt).toLocaleTimeString('en-ZM', {hour: '2-digit', minute: '2-digit'})}
+                  </p>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Link
-                  href={`/checkout?merchant=${group.merchantId}`}
-                  onClick={() => {
-                    setActiveMerchantCart(group.merchantId);
-                    onRefresh();
-                  }}
-                  className="rounded-2xl bg-neutral-950 px-4 py-3 text-center font-black text-white"
-                >
-                  Fulfil order
-                </Link>
-                <Link href={`/merchants/${group.merchantId}`} className="rounded-2xl border border-neutral-200 px-4 py-3 text-center font-black">
-                  Add more
-                </Link>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button asChild size="sm">
+                  <Link
+                    href={`/checkout?merchant=${group.merchantId}`}
+                    onClick={() => {
+                      setActiveMerchantCart(group.merchantId);
+                      onRefresh();
+                    }}
+                  >
+                    Fulfil order
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/merchants/${group.merchantId}`}>Add more</Link>
+                </Button>
               </div>
-            </article>
+            </Card>
           );
         })}
       </div>
 
       {cart.groups.length > 1 ? (
-        <footer className="border-t border-neutral-200 p-4">
-          <p className="text-sm leading-6 text-neutral-500">
-            Each store keeps its own cart so the customer can fulfil several merchant orders in parallel while each merchant still receives a clean fulfilment queue.
+        <SheetFooter className="border-t border-border/50">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Each merchant still receives a clean fulfilment queue for their own order.
           </p>
-        </footer>
+        </SheetFooter>
       ) : null}
-    </aside>
-  </div>
+    </SheetContent>
+  </Sheet>
 );
 
 const ChatTab = () => {
@@ -494,66 +631,73 @@ const ChatTab = () => {
   const merchant = selectedConversation ? findSeller(selectedConversation.merchantId) : null;
 
   return (
-    <section className="mx-auto w-full max-w-7xl p-4 lg:p-8">
+    <section className="mx-auto w-full max-w-7xl p-4 lg:p-6">
       {!selectedConversation || !merchant ? (
-      <div className="space-y-3">
-        {recentConversations.map((conversation) => {
-          const conversationMerchant = findSeller(conversation.merchantId);
-          return (
-            <button
-              key={conversation.merchantId}
-              type="button"
-              onClick={() => setSelectedConversationId(conversation.merchantId)}
-              className="w-full rounded-3xl bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex gap-3">
-                <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${conversationMerchant.products[0].imageStyle}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex justify-between gap-3">
-                    <p className="truncate font-black">{conversationMerchant.name}</p>
-                    <span className="text-xs opacity-70">{conversation.time}</span>
+        <div className="space-y-2">
+          {recentConversations.map((conversation) => {
+            const conversationMerchant = findSeller(conversation.merchantId);
+            return (
+              <button
+                key={conversation.merchantId}
+                type="button"
+                onClick={() => setSelectedConversationId(conversation.merchantId)}
+                className="w-full rounded-lg border border-border/50 bg-card p-3 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <div className="flex items-center gap-3">
+                  <ProductThumb imageStyle={conversationMerchant.products[0].imageStyle} radius="full" className="size-10" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="truncate text-sm font-medium">{conversationMerchant.name}</p>
+                      <span className="shrink-0 text-xs text-muted-foreground">{conversation.time}</span>
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">{conversation.lastMessage}</p>
                   </div>
-                  <p className="mt-1 truncate text-sm opacity-70">{conversation.lastMessage}</p>
+                  {conversation.unread ? (
+                    <Badge variant="secondary" className="bg-accent-foreground text-background">
+                      {conversation.unread}
+                    </Badge>
+                  ) : null}
                 </div>
-                {conversation.unread ? <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-500 text-xs font-black text-neutral-950">{conversation.unread}</span> : null}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      ) : (
-      <section className="flex min-h-[calc(100vh-160px)] flex-col overflow-hidden rounded-3xl bg-white shadow-sm">
-        <header className="border-b border-neutral-200 p-5">
-          <button type="button" onClick={() => setSelectedConversationId(null)} className="mb-4 inline-flex items-center gap-2 text-sm font-black text-neutral-500">
-            <FiArrowLeft />
-            Back to chats
-          </button>
-          <p className="text-sm font-black text-emerald-700">{merchant.verifiedLevel}</p>
-          <h2 className="text-2xl font-black">{merchant.name}</h2>
-          <p className="text-sm text-neutral-500">{merchant.responseTime} response - {merchant.location}</p>
-        </header>
-        <div className="flex-1 space-y-3 bg-neutral-50 p-5">
-          {selectedConversation.messages.map((message) => (
-            <div
-              key={message.id}
-              className={`max-w-[78%] rounded-3xl px-4 py-3 text-sm leading-6 ${
-                message.role === 'customer'
-                  ? 'ml-auto bg-neutral-950 text-white'
-                  : message.role === 'system'
-                    ? 'mx-auto rounded-full bg-amber-100 text-xs font-black text-amber-900'
-                    : 'bg-white text-neutral-800 shadow-sm'
-              }`}
-            >
-              {message.text}
-            </div>
-          ))}
+              </button>
+            );
+          })}
         </div>
-        <footer className="border-t border-neutral-200 p-4">
-          <div className="flex min-h-12 items-center rounded-2xl bg-neutral-100 px-4 text-sm font-semibold text-neutral-500">
-            Mock reply composer
+      ) : (
+        <section className="flex min-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-lg border border-border/50 bg-card">
+          <header className="border-b border-border/50 p-4">
+            <Button type="button" variant="ghost" size="sm" className="mb-2 -ml-2" onClick={() => setSelectedConversationId(null)}>
+              <FiArrowLeft aria-hidden />
+              Back to chats
+            </Button>
+            <p className="text-xs text-primary">{merchant.verifiedLevel}</p>
+            <h2 className="font-display text-base font-semibold">{merchant.name}</h2>
+            <p className="text-xs text-muted-foreground">
+              {merchant.responseTime} response - {merchant.location}
+            </p>
+          </header>
+          <div className="flex-1 space-y-2 bg-muted/40 p-4">
+            {selectedConversation.messages.map((message) => (
+              <p
+                key={message.id}
+                className={cn(
+                  'max-w-[78%] rounded-lg px-3 py-2 text-sm leading-6',
+                  message.role === 'customer'
+                    ? 'ml-auto bg-primary text-primary-foreground'
+                    : message.role === 'system'
+                      ? 'mx-auto rounded-full bg-warning-muted text-center text-xs text-warning'
+                      : 'border border-border/50 bg-card'
+                )}
+              >
+                {message.text}
+              </p>
+            ))}
           </div>
-        </footer>
-      </section>
+          <footer className="border-t border-border/50 p-3">
+            <div className="flex h-10 items-center rounded-md bg-muted px-3 text-xs text-muted-foreground">
+              Mock reply composer
+            </div>
+          </footer>
+        </section>
       )}
     </section>
   );
@@ -564,36 +708,40 @@ const OrdersTab = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   return (
-    <section className="mx-auto w-full max-w-7xl p-4 lg:p-8">
+    <section className="mx-auto w-full max-w-7xl p-4 lg:p-6">
       {!selectedOrderId ? (
-      <div className="space-y-3">
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">Recent orders</p>
-          <h2 className="mt-1 text-2xl font-black">Tap an order for details</h2>
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Recent orders</p>
+            <h2 className="font-display text-base font-semibold">Tap an order for details</h2>
+          </div>
+          {orders.map((order) => {
+            const merchant = findSeller(order.sellerId);
+            const product = findProduct(merchant, order.items[0]?.productId ?? merchant.products[0].id);
+            return (
+              <button
+                key={order.id}
+                type="button"
+                onClick={() => setSelectedOrderId(order.id)}
+                className="w-full rounded-lg border border-border/50 bg-card p-3 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <div className="flex items-center gap-3">
+                  <ProductThumb imageStyle={product.imageStyle} className="size-12" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium">{order.id}</span>
+                      <StatusBadge kind="order" status={order.status} />
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {merchant.name} - {product.name}
+                    </p>
+                  </div>
+                  <FiChevronRight aria-hidden className="shrink-0 text-muted-foreground" />
+                </div>
+              </button>
+            );
+          })}
         </div>
-      {orders.map((order) => {
-        const merchant = findSeller(order.sellerId);
-        const product = findProduct(merchant, order.items[0]?.productId ?? merchant.products[0].id);
-        return (
-          <button
-            key={order.id}
-            type="button"
-            onClick={() => setSelectedOrderId(order.id)}
-            className="w-full rounded-3xl bg-white p-4 text-left text-neutral-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`h-16 w-16 shrink-0 rounded-3xl bg-gradient-to-br ${product.imageStyle}`} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-black text-emerald-700">{getStatusLabel(order.status)}</p>
-                <h3 className="text-xl font-black">{order.id}</h3>
-                <p className="truncate text-sm text-neutral-500">{merchant.name} - {product.name}</p>
-              </div>
-              <FiChevronDown />
-            </div>
-          </button>
-        );
-      })}
-      </div>
       ) : (
         <OrderDetailPanel orderId={selectedOrderId} onBack={() => setSelectedOrderId(null)} />
       )}
@@ -606,72 +754,79 @@ const OrderDetailPanel = ({orderId, onBack}: {orderId: string; onBack: () => voi
   const order = orders.find((item) => item.id === orderId) ?? orders[0];
 
   if (!order) {
-    return <StateCard icon={<FiPackage />} title="No orders yet" body="Orders will appear here once checkout creates them." />;
+    return (
+      <EmptyState
+        icon={<FiPackage aria-hidden />}
+        title="No orders yet"
+        body="Orders will appear here once checkout creates them."
+      />
+    );
   }
 
   const merchant = findSeller(order.sellerId);
-  const lines = order.items.map((line) => {
-    const product = findProduct(merchant, line.productId);
-    return {...line, product};
-  });
+  const lines = order.items.map((line) => ({...line, product: findProduct(merchant, line.productId)}));
   const primaryProduct = lines[0]?.product ?? merchant.products[0];
 
   return (
-    <article className="min-h-[calc(100vh-160px)] rounded-3xl bg-white p-5 shadow-sm">
-      <button type="button" onClick={onBack} className="mb-5 inline-flex items-center gap-2 text-sm font-black text-neutral-500">
-        <FiArrowLeft />
+    <article className="min-h-[calc(100vh-11rem)] rounded-lg border border-border/50 bg-card p-4">
+      <Button type="button" variant="ghost" size="sm" className="mb-3 -ml-2" onClick={onBack}>
+        <FiArrowLeft aria-hidden />
         Back to orders
-      </button>
-      <div className="flex flex-wrap items-start gap-4">
-        <div className={`h-24 w-24 shrink-0 rounded-3xl bg-gradient-to-br ${primaryProduct.imageStyle}`} />
+      </Button>
+
+      <div className="flex flex-wrap items-start gap-3">
+        <ProductThumb imageStyle={primaryProduct.imageStyle} radius="lg" className="size-20" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black text-emerald-700">{getStatusLabel(order.status)}</p>
-          <h2 className="mt-1 text-3xl font-black">{order.id}</h2>
-          <p className="mt-1 text-sm text-neutral-500">{merchant.name} - {order.fulfilmentMethod}</p>
+          <StatusBadge kind="order" status={order.status} />
+          <h2 className="mt-1.5 font-display text-xl font-semibold">{order.id}</h2>
+          <p className="text-xs text-muted-foreground">
+            {merchant.name} - {order.fulfilmentMethod}
+          </p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Payment" value={order.paymentStatus ?? 'paid'} />
-        <Metric label="Protection" value={order.protectionStatus?.replaceAll('_', ' ') ?? 'funds protected'} />
+      <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+        <Metric label="Payment" value={<StatusBadge kind="payment" status={order.paymentStatus ?? 'paid'} />} />
+        <Metric label="Protection" value={<StatusBadge kind="protection" status={order.protectionStatus ?? 'funds_protected'} />} />
         <Metric label="Fulfilment" value={order.fulfilmentMethod} />
         <Metric label="Amount" value={order.finalAmount ? formatKwacha(order.finalAmount) : 'Seed order'} />
       </div>
 
-      <section className="mt-5 rounded-3xl bg-neutral-100 p-4">
-        <h3 className="font-black">Items</h3>
-        <div className="mt-3 space-y-2">
+      <section className="mt-4">
+        <h3 className="text-sm font-medium">Items</h3>
+        <div className="mt-2 space-y-2">
           {lines.map(({product, quantity, variant}) => (
-            <div key={product.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3">
-              <div>
-                <p className="font-black">{product.name}</p>
-                <p className="text-sm text-neutral-500">{variant ?? product.category}</p>
+            <div key={product.id} className="flex items-center justify-between gap-3 rounded-md border border-border/50 p-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{product.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{variant ?? product.category}</p>
               </div>
-              <p className="font-black">x{quantity}</p>
+              <span className="shrink-0 text-sm tabular-nums text-muted-foreground">x{quantity}</span>
             </div>
           ))}
         </div>
       </section>
 
       {order.deliveryAddress ? (
-        <section className="mt-4 rounded-3xl bg-neutral-100 p-4">
-          <h3 className="font-black">Delivery details</h3>
-          <p className="mt-2 text-sm font-semibold text-neutral-600">
+        <section className="mt-4 rounded-md border border-border/50 p-3">
+          <h3 className="text-sm font-medium">Delivery details</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
             {order.deliveryAddress.fullName} - {order.deliveryAddress.phone}
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="text-xs text-muted-foreground">
             {order.deliveryAddress.addressLine}, {order.deliveryAddress.area}
           </p>
         </section>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Link href={`/orders/${order.id}`} className="rounded-2xl bg-neutral-950 px-4 py-3 font-black text-white">
-          Track order
-        </Link>
-        <button type="button" className="rounded-2xl border border-neutral-200 px-4 py-3 font-black text-neutral-700">
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button asChild>
+          <Link href={`/orders/${order.id}`}>Track order</Link>
+        </Button>
+        {/* Mock affordance: the support flow is intentionally not implemented yet. */}
+        <Button type="button" variant="outline">
           Need help with this order
-        </button>
+        </Button>
       </div>
     </article>
   );
@@ -682,41 +837,50 @@ const ProfileTab = ({session}: {session: CommerceSession}) => {
   const completed = orders.filter((order) => order.status === 'completed').length;
 
   return (
-    <section className="mx-auto grid w-full max-w-7xl gap-6 p-4 lg:grid-cols-[360px_1fr] lg:p-8">
-      <aside className="rounded-3xl bg-white p-6 shadow-sm">
-        <div className="grid h-24 w-24 place-items-center rounded-full bg-neutral-950 text-3xl font-black text-white">
+    <section className="mx-auto grid w-full max-w-7xl gap-5 p-4 lg:grid-cols-[320px_1fr] lg:p-6">
+      <Card className="gap-0 rounded-lg border-border/50 p-4 shadow-none">
+        <div className="grid size-16 place-items-center rounded-full bg-primary text-xl font-semibold text-primary-foreground">
           {session.name.slice(0, 1)}
         </div>
-        <h2 className="mt-4 text-3xl font-black">{session.name}</h2>
-        <p className="text-neutral-500">{session.username}</p>
-        <div className="mt-5 space-y-3 text-sm">
+        <h2 className="mt-3 font-display text-lg font-semibold">{session.name}</h2>
+        <p className="text-xs text-muted-foreground">{session.username}</p>
+        <dl className="mt-4 space-y-2">
           <ProfileRow label="Mobile" value={session.mobile} />
           <ProfileRow label="Email" value={customerProfileSeed.email} />
           <ProfileRow label="Address" value={customerProfileSeed.address} />
           <ProfileRow label="Payment" value={customerProfileSeed.preferredPayment} />
           <ProfileRow label="Member since" value={customerProfileSeed.memberSince} />
-        </div>
-      </aside>
-      <div className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-3">
+        </dl>
+      </Card>
+
+      <div className="min-w-0 space-y-4">
+        <div className="grid gap-2 md:grid-cols-3">
           <Metric label="Total orders" value={String(orders.length)} />
           <Metric label="Completed" value={String(completed)} />
-          <Metric label="Saved merchants" value="5" />
+          <Metric label="Saved merchants" value={String(sellers.length)} />
         </div>
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
-          <h2 className="text-2xl font-black">Order history</h2>
-          <div className="mt-4 space-y-3">
+        <section>
+          <h2 className="font-display text-base font-semibold">Order history</h2>
+          <div className="mt-3 space-y-2">
             {orders.map((order) => {
               const merchant = findSeller(order.sellerId);
               const product = findProduct(merchant, order.items[0]?.productId ?? merchant.products[0].id);
               return (
-                <Link key={order.id} href={`/orders/${order.id}`} className="flex items-center gap-3 rounded-2xl bg-neutral-100 p-3">
-                  <div className={`h-12 w-12 rounded-2xl bg-gradient-to-br ${product.imageStyle}`} />
+                <Link
+                  key={order.id}
+                  href={`/orders/${order.id}`}
+                  className="flex items-center gap-3 rounded-lg border border-border/50 bg-card p-3 transition hover:bg-muted"
+                >
+                  <ProductThumb imageStyle={product.imageStyle} className="size-10" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-black">{order.id} - {merchant.name}</p>
-                    <p className="text-sm text-neutral-500">{getStatusLabel(order.status)}</p>
+                    <p className="truncate text-sm font-medium">
+                      {order.id} - {merchant.name}
+                    </p>
+                    <div className="mt-0.5">
+                      <StatusBadge kind="order" status={order.status} />
+                    </div>
                   </div>
-                  <FiClock className="text-neutral-400" />
+                  <FiClock aria-hidden className="shrink-0 text-muted-foreground" />
                 </Link>
               );
             })}
@@ -727,37 +891,17 @@ const ProfileTab = ({session}: {session: CommerceSession}) => {
   );
 };
 
-const Toggle = ({active, label, onClick}: {active: boolean; label: string; onClick: () => void}) => (
-  <button type="button" onClick={onClick} className={`rounded-2xl px-3 py-3 text-sm font-black ${active ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-700'}`}>
-    {label}
-  </button>
-);
-
 const SkeletonResults = () => (
-  <div className="space-y-3">
-    {[0, 1, 2].map((item) => <div key={item} className="h-28 animate-pulse rounded-3xl bg-neutral-100" />)}
-  </div>
-);
-
-const StateCard = ({icon, title, body, action, onClick}: {icon: ReactNode; title: string; body: string; action?: string; onClick?: () => void}) => (
-  <div className="rounded-3xl border border-neutral-200 bg-white p-5 text-center">
-    <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-neutral-100 text-neutral-500">{icon}</div>
-    <h2 className="mt-3 font-black">{title}</h2>
-    <p className="mt-1 text-sm text-neutral-500">{body}</p>
-    {action ? <button type="button" onClick={onClick} className="mt-3 rounded-2xl bg-neutral-950 px-4 py-2 text-sm font-black text-white">{action}</button> : null}
-  </div>
-);
-
-const Metric = ({label, value}: {label: string; value: string}) => (
-  <div className="rounded-3xl bg-white p-4 shadow-sm">
-    <p className="text-xs font-black uppercase tracking-[0.12em] text-neutral-500">{label}</p>
-    <p className="mt-2 truncate text-xl font-black capitalize">{value}</p>
+  <div className="space-y-2" aria-hidden>
+    {[0, 1, 2].map((item) => (
+      <Skeleton key={item} className="h-20 rounded-lg" />
+    ))}
   </div>
 );
 
 const ProfileRow = ({label, value}: {label: string; value: string}) => (
-  <div className="rounded-2xl bg-neutral-100 p-3">
-    <p className="text-xs font-black uppercase tracking-[0.12em] text-neutral-500">{label}</p>
-    <p className="mt-1 font-bold text-neutral-900">{value}</p>
+  <div className="flex items-baseline justify-between gap-3 rounded-md bg-muted px-3 py-2">
+    <dt className="text-xs text-muted-foreground">{label}</dt>
+    <dd className="truncate text-right text-xs font-medium">{value}</dd>
   </div>
 );
