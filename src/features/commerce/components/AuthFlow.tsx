@@ -1,14 +1,12 @@
 'use client';
 
 import type {Dispatch, FormEvent, ReactNode, SetStateAction} from 'react';
-import {useEffect, useId, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
   FiArrowLeft,
   FiArrowRight,
   FiBriefcase,
   FiCheckCircle,
-  FiEye,
-  FiEyeOff,
   FiKey,
   FiMapPin,
   FiPackage,
@@ -21,7 +19,6 @@ import {
 import {Button} from '@/src/components/ui/button';
 import {Input} from '@/src/components/ui/input';
 import {Label} from '@/src/components/ui/label';
-import {Textarea} from '@/src/components/ui/textarea';
 import {cn} from '@/src/lib/cn';
 
 import {
@@ -33,6 +30,7 @@ import {
   trustOptions
 } from '../data/merchantOnboarding';
 import type {CommerceSession, CommerceUserRole, MerchantOnboardingAnswers} from '../types/auth';
+import {Field} from './shared';
 
 export type {CommerceSession, CommerceUserRole, MerchantOnboardingAnswers};
 
@@ -739,59 +737,3 @@ const slugify = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '')
     .slice(0, 18) || 'merchant';
-
-/**
- * Labelled text input. Wraps the Shadcn primitives so every auth field shares
- * one label, height, and focus treatment, and keeps the password reveal toggle
- * the previous bespoke input provided.
- */
-const Field = ({
-  label,
-  value,
-  onChange,
-  type = 'text',
-  inputMode,
-  multiline = false
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  inputMode?: 'numeric';
-  multiline?: boolean;
-}) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const id = useId();
-  const isPassword = type === 'password';
-  const effectiveType = isPassword ? (showPassword ? 'text' : 'password') : type;
-
-  return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
-      {multiline ? (
-        <Textarea id={id} rows={3} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5" />
-      ) : (
-        <div className="relative mt-1.5">
-          <Input
-            id={id}
-            type={effectiveType}
-            inputMode={inputMode}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            className={cn('h-10', isPassword && 'pr-10')}
-          />
-          {isPassword ? (
-            <button
-              type="button"
-              onClick={() => setShowPassword((previous) => !previous)}
-              className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground transition hover:text-foreground"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <FiEyeOff aria-hidden /> : <FiEye aria-hidden />}
-            </button>
-          ) : null}
-        </div>
-      )}
-    </div>
-  );
-};

@@ -3,7 +3,19 @@
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
-import {FiAlertCircle, FiCreditCard, FiPackage, FiShield, FiShoppingBag, FiTruck} from 'react-icons/fi';
+import {FiAlertCircle, FiArrowLeft, FiCreditCard, FiMinus, FiPackage, FiPlus, FiShield, FiShoppingBag, FiTruck} from 'react-icons/fi';
+
+import {Button} from '@/src/components/ui/button';
+import {Card} from '@/src/components/ui/card';
+import {Label} from '@/src/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/src/components/ui/select';
+import {cn} from '@/src/lib/cn';
 
 import {deliverySlots, initialOrders} from '../data/mockCommerce';
 import {findProduct, findSeller, formatKwacha} from '../lib/commerceLogic';
@@ -13,6 +25,7 @@ import {mockPaymentProvider} from '../services/mockPaymentProvider';
 import {createProtectedOrder, readOrders, saveOrders} from '../services/orderService';
 import {calculatePriceBreakdown} from '../services/pricingService';
 import type {DeliveryAddress, FulfilmentMethod, PaymentInput} from '../types/commerce';
+import {EmptyState, Field, Money, ProductThumb} from './shared';
 
 const savedAddress: DeliveryAddress = {
   fullName: 'Demo Customer',
@@ -21,6 +34,16 @@ const savedAddress: DeliveryAddress = {
   area: 'Kabulonga',
   instructions: 'Call when outside.'
 };
+
+const steps = ['Cart', 'Delivery', 'Payment', 'Review'] as const;
+
+const paymentMethodLabels: Record<PaymentInput['method'], string> = {
+  mobile_money: 'Mobile money',
+  card: 'Card',
+  pay_on_pickup: 'Pay on pickup'
+};
+
+const mobileMoneyProviders: NonNullable<PaymentInput['provider']>[] = ['MTN Money', 'Airtel Money', 'Zamtel Money'];
 
 export const CheckoutPageClient = () => {
   const router = useRouter();
@@ -106,41 +129,85 @@ export const CheckoutPageClient = () => {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 text-neutral-950">
-      <div className="min-h-screen bg-white pb-24">
-        {loading ? <div className="sticky top-0 z-30 bg-emerald-700 p-3 text-center text-sm font-black text-white">Processing simulation...</div> : null}
-        <header className="border-b border-neutral-200 p-4 lg:px-8">
-          <Link href="/discover" className="text-sm font-black text-neutral-500">Back to discovery</Link>
-          <h1 className="mt-2 text-3xl font-black">Checkout</h1>
-          <p className="text-sm text-neutral-500">{merchant.name} - single merchant order</p>
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-card pb-16">
+        {loading ? (
+          <p role="status" className="sticky top-0 z-30 bg-primary p-2 text-center text-xs font-medium text-primary-foreground">
+            Processing simulation...
+          </p>
+        ) : null}
+
+        <header className="border-b border-border/50 p-4 lg:px-6">
+          <Button asChild variant="ghost" size="sm" className="-ml-2">
+            <Link href="/discover">
+              <FiArrowLeft aria-hidden />
+              Back to discovery
+            </Link>
+          </Button>
+          <h1 className="mt-1 font-display text-xl font-semibold">Checkout</h1>
+          <p className="text-xs text-muted-foreground">{merchant.name} - single merchant order</p>
         </header>
-        <section className="mx-auto max-w-5xl space-y-4 p-4 lg:p-8">
-          {error ? <div className="rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-700"><FiAlertCircle className="mr-2 inline" /> {error}</div> : null}
-          <div className="grid grid-cols-4 gap-2">
-            {['Cart', 'Delivery', 'Payment', 'Review'].map((label, index) => (
-              <button key={label} type="button" onClick={() => setStep(index)} className={`rounded-2xl px-2 py-3 text-xs font-black ${step === index ? 'bg-neutral-950 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+
+        <section className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
+          {error ? (
+            <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-xs text-destructive">
+              <FiAlertCircle aria-hidden className="mt-0.5 shrink-0" />
+              {error}
+            </p>
+          ) : null}
+
+          <nav className="grid grid-cols-4 gap-1.5" aria-label="Checkout steps">
+            {steps.map((label, index) => (
+              <Button
+                key={label}
+                type="button"
+                size="sm"
+                variant={step === index ? 'default' : 'secondary'}
+                aria-current={step === index ? 'step' : undefined}
+                onClick={() => setStep(index)}
+                className={cn('h-9', step !== index && 'text-muted-foreground')}
+              >
                 {label}
-              </button>
+              </Button>
             ))}
-          </div>
+          </nav>
 
           {step === 0 ? (
-            <section className="space-y-3">
+            <section className="space-y-2">
               {cart.items.map((item) => {
                 const product = findProduct(merchant, item.productId);
                 return (
-                  <div key={item.productId} className="flex gap-3 rounded-3xl border border-neutral-200 p-3">
-                    <div className={`h-20 w-20 rounded-2xl bg-gradient-to-br ${product.imageStyle}`} />
-                    <div className="flex-1">
-                      <p className="font-black">{product.name}</p>
-                      <p className="text-sm text-neutral-500">{formatKwacha(product.price)} each</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <button type="button" onClick={() => updateQuantity(product.id, item.quantity - 1)} className="h-9 w-9 rounded-full bg-neutral-100 font-black">-</button>
-                        <span className="font-black">{item.quantity}</span>
-                        <button type="button" onClick={() => updateQuantity(product.id, item.quantity + 1)} className="h-9 w-9 rounded-full bg-neutral-950 font-black text-white">+</button>
+                  <Card key={item.productId} className="gap-0 rounded-lg border-border/50 p-3 shadow-none">
+                    <div className="flex gap-3">
+                      <ProductThumb imageStyle={product.imageStyle} className="size-16" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatKwacha(product.price)} each</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="size-8"
+                            aria-label={`Decrease ${product.name} quantity`}
+                            onClick={() => updateQuantity(product.id, item.quantity - 1)}
+                          >
+                            <FiMinus aria-hidden />
+                          </Button>
+                          <span className="min-w-6 text-center text-sm font-medium tabular-nums">{item.quantity}</span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            className="size-8"
+                            aria-label={`Increase ${product.name} quantity`}
+                            onClick={() => updateQuantity(product.id, item.quantity + 1)}
+                          >
+                            <FiPlus aria-hidden />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
               <CheckoutNav next={() => setStep(1)} />
@@ -151,23 +218,46 @@ export const CheckoutPageClient = () => {
             <section className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 {(['delivery', 'pickup'] as const).map((option) => (
-                  <button key={option} type="button" onClick={() => setMethod(option)} className={`rounded-3xl px-4 py-4 font-black capitalize ${method === option ? 'bg-emerald-700 text-white' : 'bg-neutral-100'}`}>
-                    {option === 'delivery' ? <FiTruck className="mb-2" /> : <FiPackage className="mb-2" />} {option}
-                  </button>
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={method === option ? 'default' : 'outline'}
+                    aria-pressed={method === option}
+                    onClick={() => setMethod(option)}
+                    className="h-auto flex-col items-start gap-1 p-3 capitalize"
+                  >
+                    {option === 'delivery' ? <FiTruck aria-hidden /> : <FiPackage aria-hidden />}
+                    {option}
+                  </Button>
                 ))}
               </div>
+
               {method === 'delivery' ? (
-                <div className="space-y-2 rounded-3xl border border-neutral-200 p-4">
-                  <Input label="Full name" value={address.fullName} onChange={(value) => setAddress((current) => ({...current, fullName: value}))} />
-                  <Input label="Phone number" value={address.phone} onChange={(value) => setAddress((current) => ({...current, phone: value}))} />
-                  <Input label="Address" value={address.addressLine} onChange={(value) => setAddress((current) => ({...current, addressLine: value}))} />
-                  <Input label="Area or neighbourhood" value={address.area} onChange={(value) => setAddress((current) => ({...current, area: value}))} />
-                  <Input label="Delivery instructions" value={address.instructions ?? ''} onChange={(value) => setAddress((current) => ({...current, instructions: value}))} />
-                </div>
+                <Card className="gap-3 rounded-lg border-border/50 p-4 shadow-none">
+                  <Field label="Full name" value={address.fullName} onChange={(value) => setAddress((current) => ({...current, fullName: value}))} />
+                  <Field label="Phone number" inputMode="tel" value={address.phone} onChange={(value) => setAddress((current) => ({...current, phone: value}))} />
+                  <Field label="Address" value={address.addressLine} onChange={(value) => setAddress((current) => ({...current, addressLine: value}))} />
+                  <Field label="Area or neighbourhood" value={address.area} onChange={(value) => setAddress((current) => ({...current, area: value}))} />
+                  <Field label="Delivery instructions" value={address.instructions ?? ''} onChange={(value) => setAddress((current) => ({...current, instructions: value}))} />
+                </Card>
               ) : null}
-              <select value={slotId} onChange={(event) => setSlotId(event.target.value)} className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-bold" aria-label="Delivery slot">
-                {availableSlots.map((slot) => <option key={slot.id} value={slot.id}>{slot.label} - {formatKwacha(slot.fee)}</option>)}
-              </select>
+
+              <div>
+                <Label htmlFor="delivery-slot">Delivery slot</Label>
+                <Select value={slotId} onValueChange={setSlotId}>
+                  <SelectTrigger id="delivery-slot" className="mt-1.5 w-full">
+                    <SelectValue placeholder="Choose a slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.id}>
+                        {slot.label} - {formatKwacha(slot.fee)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <CheckoutNav back={() => setStep(0)} next={() => setStep(2)} />
             </section>
           ) : null}
@@ -176,22 +266,50 @@ export const CheckoutPageClient = () => {
             <section className="space-y-3">
               <div className="grid gap-2">
                 {(['mobile_money', 'card', 'pay_on_pickup'] as const).map((methodOption) => (
-                  <button key={methodOption} type="button" onClick={() => setPayment((current) => ({...current, method: methodOption}))} className={`rounded-3xl border px-4 py-4 text-left font-black ${payment.method === methodOption ? 'border-neutral-950 bg-neutral-950 text-white' : 'border-neutral-200'}`}>
-                    <FiCreditCard className="mb-2" /> {methodOption.replaceAll('_', ' ')}
-                  </button>
+                  <Button
+                    key={methodOption}
+                    type="button"
+                    variant={payment.method === methodOption ? 'default' : 'outline'}
+                    aria-pressed={payment.method === methodOption}
+                    onClick={() => setPayment((current) => ({...current, method: methodOption}))}
+                    className="h-auto justify-start gap-3 p-3"
+                  >
+                    <FiCreditCard aria-hidden />
+                    {paymentMethodLabels[methodOption]}
+                  </Button>
                 ))}
               </div>
+
               {payment.method === 'mobile_money' ? (
-                <div className="space-y-2 rounded-3xl border border-neutral-200 p-4">
-                  <select value={payment.provider} onChange={(event) => setPayment((current) => ({...current, provider: event.target.value as PaymentInput['provider']}))} className="w-full rounded-2xl bg-neutral-100 px-4 py-3 font-bold">
-                    <option>MTN Money</option>
-                    <option>Airtel Money</option>
-                    <option>Zamtel Money</option>
-                  </select>
-                  <Input label="Mobile money phone" value={payment.phone ?? ''} onChange={(value) => setPayment((current) => ({...current, phone: value}))} />
-                  <p className="text-xs font-semibold text-neutral-500">Use a number ending in 000 to simulate a payment failure.</p>
-                </div>
+                <Card className="gap-3 rounded-lg border-border/50 p-4 shadow-none">
+                  <div>
+                    <Label htmlFor="mm-provider">Provider</Label>
+                    <Select
+                      value={payment.provider}
+                      onValueChange={(value) => setPayment((current) => ({...current, provider: value as PaymentInput['provider']}))}
+                    >
+                      <SelectTrigger id="mm-provider" className="mt-1.5 w-full">
+                        <SelectValue placeholder="Choose a provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mobileMoneyProviders.map((provider) => (
+                          <SelectItem key={provider} value={provider}>
+                            {provider}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Field
+                    label="Mobile money phone"
+                    inputMode="tel"
+                    value={payment.phone ?? ''}
+                    onChange={(value) => setPayment((current) => ({...current, phone: value}))}
+                    hint="Use a number ending in 000 to simulate a payment failure."
+                  />
+                </Card>
               ) : null}
+
               <CheckoutNav back={() => setStep(1)} next={() => setStep(3)} />
             </section>
           ) : null}
@@ -199,13 +317,18 @@ export const CheckoutPageClient = () => {
           {step === 3 ? (
             <section className="space-y-3">
               <PriceBreakdown pricing={pricing} />
-              <div className="rounded-3xl bg-emerald-50 p-4">
-                <p className="font-black text-emerald-950"><FiShield className="mr-2 inline" /> Payment protection simulation</p>
-                <p className="mt-1 text-sm text-emerald-800">Funds are marked as protected after successful simulated payment. This is not real regulated escrow.</p>
-              </div>
-              <button type="button" onClick={pay} className="w-full rounded-3xl bg-amber-500 px-4 py-4 font-black text-neutral-950">
-                Complete simulated payment
-              </button>
+              <Card className="gap-0 rounded-lg border-border/50 bg-primary/5 p-4 shadow-none">
+                <p className="flex items-center gap-2 text-sm font-medium text-primary">
+                  <FiShield aria-hidden />
+                  Payment protection simulation
+                </p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                  Funds are marked as protected after successful simulated payment. This is not real regulated escrow.
+                </p>
+              </Card>
+              <Button type="button" size="lg" className="w-full" disabled={loading} onClick={pay}>
+                {loading ? 'Processing...' : 'Complete simulated payment'}
+              </Button>
               <CheckoutNav back={() => setStep(2)} />
             </section>
           ) : null}
@@ -216,44 +339,67 @@ export const CheckoutPageClient = () => {
 };
 
 const EmptyCheckout = () => (
-  <main className="grid min-h-screen place-items-center bg-neutral-100 p-4">
-    <section className="max-w-md rounded-3xl bg-white p-6 text-center shadow-xl">
-      <FiShoppingBag className="mx-auto text-neutral-400" size={36} />
-      <h1 className="mt-3 text-2xl font-black">Your cart is empty</h1>
-      <p className="mt-2 text-sm text-neutral-500">Search for a merchant or product to start an order.</p>
-      <Link href="/discover" className="mt-4 inline-flex rounded-2xl bg-neutral-950 px-4 py-3 font-black text-white">Go to discovery</Link>
-    </section>
+  <main className="grid min-h-screen place-items-center bg-background p-4">
+    <div className="w-full max-w-sm">
+      <EmptyState
+        icon={<FiShoppingBag aria-hidden />}
+        title="Your cart is empty"
+        body="Search for a merchant or product to start an order."
+      />
+      <Button asChild className="mt-3 w-full">
+        <Link href="/discover">Go to discovery</Link>
+      </Button>
+    </div>
   </main>
 );
 
 const CheckoutNav = ({back, next}: {back?: () => void; next?: () => void}) => (
   <div className="grid grid-cols-2 gap-2">
-    {back ? <button type="button" onClick={back} className="rounded-2xl border border-neutral-200 px-4 py-3 font-black">Back</button> : <span />}
-    {next ? <button type="button" onClick={next} className="rounded-2xl bg-neutral-950 px-4 py-3 font-black text-white">Continue</button> : <span />}
+    {back ? (
+      <Button type="button" variant="outline" onClick={back}>
+        <FiArrowLeft aria-hidden />
+        Back
+      </Button>
+    ) : (
+      <span />
+    )}
+    {next ? (
+      <Button type="button" onClick={next}>
+        Continue
+      </Button>
+    ) : (
+      <span />
+    )}
   </div>
 );
 
-const Input = ({label, value, onChange}: {label: string; value: string; onChange: (value: string) => void}) => (
-  <label className="block">
-    <span className="text-xs font-black uppercase tracking-[0.12em] text-neutral-500">{label}</span>
-    <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-2xl bg-neutral-100 px-4 py-3 font-semibold outline-none" />
-  </label>
-);
+type Pricing = {subtotal: number; deliveryFee: number; protectionFee: number; discount: number; finalTotal: number};
 
-const PriceBreakdown = ({pricing}: {pricing: {subtotal: number; deliveryFee: number; protectionFee: number; discount: number; finalTotal: number}}) => (
-  <div className="rounded-3xl border border-neutral-200 p-4">
-    <h2 className="font-black">Price breakdown</h2>
-    {[
-      ['Product subtotal', pricing.subtotal],
-      ['Delivery fee', pricing.deliveryFee],
-      ['Buyer protection fee', pricing.protectionFee],
-      ['Discount', -pricing.discount],
-      ['Final total', pricing.finalTotal]
-    ].map(([label, value]) => (
-      <div key={label} className="mt-2 flex justify-between text-sm">
-        <span className={label === 'Final total' ? 'font-black' : 'text-neutral-500'}>{label}</span>
-        <span className="font-black">{formatKwacha(Number(value))}</span>
-      </div>
-    ))}
-  </div>
-);
+const PriceBreakdown = ({pricing}: {pricing: Pricing}) => {
+  const rows: Array<{label: string; amount: number; total?: boolean}> = [
+    {label: 'Product subtotal', amount: pricing.subtotal},
+    {label: 'Delivery fee', amount: pricing.deliveryFee},
+    {label: 'Buyer protection fee', amount: pricing.protectionFee},
+    {label: 'Discount', amount: -pricing.discount},
+    {label: 'Final total', amount: pricing.finalTotal, total: true}
+  ];
+
+  return (
+    <Card className="gap-0 rounded-lg border-border/50 p-4 shadow-none">
+      <h2 className="text-sm font-medium">Price breakdown</h2>
+      <dl className="mt-2 grid gap-1.5">
+        {rows.map(({label, amount, total}) => (
+          <div
+            key={label}
+            className={cn('flex items-baseline justify-between gap-3 text-sm', total && 'border-t border-border/50 pt-2')}
+          >
+            <dt className={total ? 'font-medium' : 'text-xs text-muted-foreground'}>{label}</dt>
+            <dd>
+              <Money amount={amount} emphasis={total ? 'strong' : 'default'} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Card>
+  );
+};

@@ -3,8 +3,8 @@ import {Suspense} from 'react';
 import {CheckoutPageClient} from '@/src/features/commerce/components/CheckoutPageClient';
 
 const CheckoutFallback = () => (
-  <main className="grid min-h-screen place-items-center bg-neutral-100 p-4">
-    <div className="rounded-3xl bg-white p-6 text-sm font-black text-neutral-500 shadow-sm">Preparing checkout...</div>
+  <main className="grid min-h-screen place-items-center bg-background p-4">
+    <div className="rounded-lg border border-border/50 bg-card p-5 text-sm text-muted-foreground">Preparing checkout...</div>
   </main>
 );
 
