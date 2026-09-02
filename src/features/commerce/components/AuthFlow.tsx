@@ -36,6 +36,7 @@ type AuthFlowProps = {
   description: string;
   onComplete: (session: CommerceSession) => void;
   alternateAction?: ReactNode;
+  presentation?: 'full' | 'embedded';
 };
 
 type AuthMode = 'login' | 'register';
@@ -91,7 +92,14 @@ const roleContent: Record<CommerceUserRole, RoleContent> = {
   }
 };
 
-export const AuthFlow = ({initialRole, title, description, onComplete, alternateAction}: AuthFlowProps) => {
+export const AuthFlow = ({
+  initialRole,
+  title,
+  description,
+  onComplete,
+  alternateAction,
+  presentation = 'full'
+}: AuthFlowProps) => {
   const [role, setRole] = useState<CommerceUserRole>(initialRole);
   const [mode, setMode] = useState<AuthMode>('login');
   const [form, setForm] = useState(() => buildDefaultForm(initialRole));
@@ -196,9 +204,14 @@ export const AuthFlow = ({initialRole, title, description, onComplete, alternate
     }
   };
 
-  return (
-    <main className="min-h-screen bg-neutral-100 p-4 text-neutral-950">
-      <section className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-[32px] bg-white shadow-sm lg:grid-cols-[0.92fr_1.08fr]">
+  const authPanel = (
+      <section
+        className={`mx-auto grid w-full overflow-hidden bg-white shadow-sm lg:grid-cols-[0.92fr_1.08fr] ${
+          presentation === 'embedded'
+            ? 'rounded-[28px] border border-ink-5'
+            : 'min-h-[calc(100vh-2rem)] max-w-6xl rounded-[32px]'
+        }`}
+      >
         <aside className="relative overflow-hidden bg-neutral-950 p-6 text-white lg:p-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(16,185,129,0.32),transparent_34%),radial-gradient(circle_at_90%_85%,rgba(245,158,11,0.25),transparent_36%)]" />
           <div className="relative z-[1] flex h-full flex-col">
@@ -310,8 +323,11 @@ export const AuthFlow = ({initialRole, title, description, onComplete, alternate
           )}
         </section>
       </section>
-    </main>
   );
+
+  if (presentation === 'embedded') return authPanel;
+
+  return <main className="min-h-screen bg-neutral-100 p-4 text-neutral-950">{authPanel}</main>;
 };
 
 const PasswordStep = ({

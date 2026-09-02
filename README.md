@@ -38,6 +38,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+The root route `/` now renders the public landing page with the active customer/merchant login and signup flow embedded directly on the page. Successful customer sessions continue to `/discover`; successful merchant sessions continue to `/merchant/orders`.
+
 For a production check:
 
 ```bash
@@ -68,7 +70,7 @@ Set `AUTH_SESSION_SECRET` in production before using the auth routes. The curren
 
 ### `src/app/`
 
-- `src/app/page.tsx` - Redirects the root route to `/discover`.
+- `src/app/page.tsx` - Public landing page route that introduces AICOS Commerce and routes users into customer or merchant login/signup flows.
 - `src/app/layout.tsx` - Root layout, page metadata, `next-intl` provider, global CSS import, and optimized Alata/Google Sans font variables.
 - `src/app/globals.css` - Tailwind import, theme tokens, modern font stack, animations, and app-wide utility styles.
 - `src/app/discover/page.tsx` - Customer merchant/product discovery route.
@@ -119,6 +121,7 @@ Main customer commerce feature area. It keeps UI, mock data, logic, and shared t
 Reusable TypeScript components used by secondary routes and the hub.
 
 - `auth/AuthFormFields.tsx` - Shared authentication form fields for `/auth`.
+- `landing/LandingPage.tsx` - Public marketing/introductory page for `/`, with descriptive feature content and the reusable customer/merchant login/signup flow embedded directly in the landing experience.
 - `pages/AuthExperience.tsx` - Auth/onboarding preview experience.
 - `pages/HubLandingPage.tsx` - Explanatory project hub page.
 - `ui/Button.tsx`, `ui/Card.tsx`, `ui/IconButton.tsx`, `ui/InputField.tsx`, `ui/SectionHeading.tsx` - Shared UI primitives.
@@ -132,6 +135,7 @@ Reusable TypeScript components used by secondary routes and the hub.
 Shared support for the retained hub and auth routes.
 
 - `src/data/hubData.ts` - Mock data for hub demo flows.
+- `src/data/landingPage.ts` - Typed landing-page content for stats, feature cards, journey steps, and the hero order preview.
 - `src/lib/iconography.ts` - Shared icon mapping based on `react-icons`.
 
 ### `messages/` and `i18n/`
@@ -177,6 +181,7 @@ Shared support for the retained hub and auth routes.
 
 ## Current UX Progress
 
+- Landing page: `/` introduces the customer and merchant value proposition, explains the main features, previews the commerce journey, and includes the current password + OTP login/signup flow for both customers and merchants.
 - Customer entry: `/discover` opens with customer login/register. Both flows require password first and OTP second.
 - Merchant entry: `/merchant/orders` opens with merchant login/register. Register includes the guided onboarding interview, then password + OTP account creation.
 - Discover: search, suggestions, filters, category cards, merchant cards, product cards, and multi-merchant add-to-cart are working against local mock data.
@@ -187,23 +192,9 @@ Shared support for the retained hub and auth routes.
 - Merchant workspace: dashboard metrics, order queue, inventory view, and support preview are implemented as a scaffold for future deeper merchant tools.
 - Merchant onboarding: registration now sends onboarding answers to the auth backend and returns them in the signed session. A production database should persist them as merchant profile, catalog draft, fulfilment settings, payment preferences, and trust-policy records.
 
-## Shippable Product Checklist
+## GitHub Issue Tracking
 
-- Replace the file-backed auth store with a real database and migration workflow.
-- Connect OTP delivery to production SMS and email providers.
-- Add rate limiting for login, registration, and OTP verification endpoints.
-- Add password reset and account recovery.
-- Add email/mobile verification status and contact-change verification.
-- Add role-based route protection for customer-only and merchant-only pages.
-- Move carts and orders from browser/local storage into authenticated backend records.
-- Replace mock payment and escrow with real payment provider and compliance review.
-- Replace mock delivery with real courier/provider integration.
-- Add merchant catalog management: products, services, inventory, pricing, photos, availability, and policies.
-- Add support/dispute flows, internal notes, evidence upload, refunds, and escalation states.
-- Add audit logs for auth, payments, fulfilment, support, and merchant changes.
-- Add observability: error tracking, structured logs, metrics, and uptime checks.
-- Add automated tests for auth APIs, session handling, cart persistence, checkout, and merchant workflows.
-- Add privacy/security review for PII, session cookies, OTP handling, and data retention.
+Shippable-product work is now tracked through GitHub issues rather than a README checklist. Use the issue workflow for opening, commenting on, and closing implementation tasks; keep this README focused on current app structure, capabilities, setup, and deployment notes.
 
 ## Data and Future Backend Swap Points
 

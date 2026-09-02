@@ -1,5 +1,5 @@
-import {redirect} from 'next/navigation';
+import { LandingPage } from '@/src/components/landing/LandingPage';
 
-const Page = () => redirect('/discover');
+const Page = () => <LandingPage />;
 
 export default Page;

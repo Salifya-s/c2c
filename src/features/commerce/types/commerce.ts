@@ -4,6 +4,7 @@ export type OrderStatus =
   | 'pending_payment'
   | 'created'
   | 'paid'
+  | 'paid_in_escrow'
   | 'awaiting_merchant_acceptance'
   | 'accepted'
   | 'preparing'
@@ -15,6 +16,7 @@ export type OrderStatus =
   | 'in_delivery'
   | 'out_for_delivery'
   | 'delivered'
+  | 'pin_verified'
   | 'completed'
   | 'cancelled'
   | 'disputed';
