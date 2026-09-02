@@ -2,7 +2,7 @@
 
 import type {ChangeEventHandler} from 'react';
 
-import {InputField} from '@/src/components/ui/InputField';
+import {InputField} from '@/src/components/auth/InputField';
 
 export type AuthFieldConfig = {
   labelKey: string;

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {useTranslations} from 'next-intl';
 
 import {AuthFormFields, type AuthFieldConfig} from '@/src/components/auth/AuthFormFields';
-import {Card} from '@/src/components/ui/Card';
+import {Card} from '@/src/components/hub/Card';
 import {uiIcons} from '@/lib/iconography';
 
 type AuthRole = 'customer' | 'vendor';

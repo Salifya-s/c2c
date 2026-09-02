@@ -5,8 +5,8 @@ import ChatDemo from '@/components/hub/ChatDemo';
 import EscrowFlow from '@/components/hub/EscrowFlow';
 import FeaturesTabs from '@/components/hub/FeaturesTabs';
 import HeroChat from '@/components/hub/HeroChat';
-import {Card} from '@/src/components/ui/Card';
-import {SectionHeading} from '@/src/components/ui/SectionHeading';
+import {Card} from '@/src/components/hub/Card';
+import {SectionHeading} from '@/src/components/hub/SectionHeading';
 import {uiIcons} from '@/lib/iconography';
 
 const problemCardConfig = [

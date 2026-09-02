@@ -50,11 +50,71 @@
   --animate-fill-line: fill-line 0.5s forwards;
 
   --radius-pill: 999px;
+
+  /* --- Shadcn semantic tokens, mapped onto the zam/ink brand above --- */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Escrow / fulfilment tones - not part of the stock Shadcn set */
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+
+  /* Radius scale derived from --radius. With --radius: 0.5rem these resolve
+     to exactly Tailwind v4 defaults, so existing rounded-* usage is unchanged. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
 }
 
 :root {
-  --background: #f5f1eb;
-  --foreground: #1a1410;
+  /* Brand ground - unchanged. The marketing hub and body depend on these. */
+  --background: #f5f1eb;      /* cream   */
+  --foreground: #1a1410;      /* ink     */
+
+  --radius: 0.5rem;
+
+  --card: #ffffff;
+  --card-foreground: #1a1410;        /* ink            */
+  --popover: #ffffff;
+  --popover-foreground: #1a1410;     /* ink            */
+  --primary: #0e5c34;                /* zam-green-800  */
+  --primary-foreground: #ffffff;
+  --secondary: #f5f1eb;              /* ink-6          */
+  --secondary-foreground: #3d322a;   /* ink-2          */
+  --muted: #f5f1eb;                  /* ink-6          */
+  --muted-foreground: #6b5a4e;       /* ink-3          */
+  --accent: #fff8e7;                 /* zam-amber-50   */
+  --accent-foreground: #7a3d00;      /* zam-amber-800  */
+  --destructive: #e24b4a;            /* zam-red        */
+  --destructive-foreground: #ffffff;
+  --border: #e8e0d8;                 /* ink-5          */
+  --input: #e8e0d8;                  /* ink-5          */
+  --ring: #2dba72;                   /* zam-green-400  */
+
+  /* Escrow / fulfilment tones */
+  --success: #126e3e;                /* zam-green-700  */
+  --success-muted: #edfaf3;          /* zam-green-50   */
+  --warning: #9c4e00;                /* zam-amber-700  */
+  --warning-muted: #fff8e7;          /* zam-amber-50   */
 }
 
 @keyframes heart-pop {
