@@ -1,14 +1,15 @@
-import {AuthExperience} from '@/src/components/pages/AuthExperience';
+import {redirect} from 'next/navigation';
 
-type AuthPageProps = {
-  searchParams?: Promise<{ role?: string }>;
-};
+/**
+ * Auth now lives in the `#access` panel on the landing page, so this route
+ * forwards rather than rendering a second implementation. `vendor` is accepted
+ * alongside `merchant` because the retired auth screen used that wording.
+ */
+const AuthPage = async ({searchParams}: PageProps<'/auth'>) => {
+  const query = await searchParams;
+  const isMerchant = query.role === 'merchant' || query.role === 'vendor';
 
-const AuthPage = async ({ searchParams }: AuthPageProps) => {
-  const resolvedSearchParams = await searchParams;
-  const initialRole = resolvedSearchParams?.role === 'vendor' ? 'vendor' : 'customer';
-
-  return <AuthExperience initialRole={initialRole} />;
+  redirect(isMerchant ? '/?role=merchant#access' : '/#access');
 };
 
 export default AuthPage;

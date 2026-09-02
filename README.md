@@ -27,7 +27,7 @@ This is a working prototype moving toward a shippable AI Commerce Operating Syst
 - Merchant-facing workspace with dashboard metrics, fulfilment queue, inventory signals, support preview, simulated order actions, and logout.
 - Simulated loading overlays, progress animations, active timeline states, and smooth tab/screen transitions.
 - Dedicated adapters/services for search parsing, discovery ranking, cart persistence, mock Yango delivery quotes/slots, simulated payments, price breakdowns, and local order persistence.
-- Alata headings and Google Sans body copy configured through `next/font/google` with `font-display: swap`.
+- DM Sans headings and Jost body copy configured through `next/font/google` with `font-display: swap`.
 
 ## Run Locally
 
@@ -71,15 +71,15 @@ Set `AUTH_SESSION_SECRET` in production before using the auth routes. The curren
 ### `src/app/`
 
 - `src/app/page.tsx` - Public landing page route that introduces AICOS Commerce and routes users into customer or merchant login/signup flows.
-- `src/app/layout.tsx` - Root layout, page metadata, `next-intl` provider, global CSS import, and optimized Alata/Google Sans font variables.
-- `src/app/globals.css` - Tailwind import, theme tokens, modern font stack, animations, and app-wide utility styles.
+- `src/app/layout.tsx` - Root layout, page metadata, `next-intl` provider, global CSS import, and optimized DM Sans/Jost font variables.
+- `src/app/globals.css` - Tailwind v4 `@theme inline` block holding the zam/ink brand ramps plus the Shadcn semantic tokens mapped onto them, animations, and app-wide utility styles.
 - `src/app/discover/page.tsx` - Customer merchant/product discovery route.
 - `src/app/merchants/[merchantId]/page.tsx` - Dynamic merchant storefront route.
 - `src/app/checkout/page.tsx` - Checkout route.
 - `src/app/orders/[orderId]/page.tsx` - Dynamic customer order tracking route.
 - `src/app/merchant/orders/page.tsx` - Merchant order-management route for the prototype.
-- `src/app/hub/page.tsx` - Existing explanatory project hub route.
-- `src/app/auth/page.tsx` - Existing authentication/onboarding preview route.
+- `src/app/hub/page.tsx` - Redirect to `/`. The standalone hub was retired once the landing page carried the same pitch.
+- `src/app/auth/page.tsx` - Redirect to the landing page's `#access` auth panel, preserving `?role=` (and the legacy `vendor` spelling).
 - `src/app/api/auth/register/start/route.ts` - Starts customer or merchant registration, hashes the password, creates a user draft, and sends an OTP challenge.
 - `src/app/api/auth/login/start/route.ts` - Checks password credentials and sends an OTP challenge.
 - `src/app/api/auth/verify-otp/route.ts` - Verifies OTP challenges and creates a signed HttpOnly session cookie.
@@ -97,6 +97,7 @@ Main customer commerce feature area. It keeps UI, mock data, logic, and shared t
 - `components/CheckoutPageClient.tsx` - Step-based checkout for cart review, fulfilment, address, slots, payment, review, and order creation.
 - `components/OrderTrackingPageClient.tsx` - Order confirmation, readable customer timeline, simulated updates, completion PIN, protection status, and issue reporting.
 - `components/MerchantOrdersPageClient.tsx` - Merchant login/onboarding gate plus dashboard, fulfilment queue, inventory signal view, support preview, and simulated acceptance, rejection, and fulfilment status changes.
+- `components/shared/` - Cross-screen commerce vocabulary: `StatusBadge` (order/protection/payment status to one tone + label), `Money` (Kwacha formatting), `ProductThumb` (single render path for placeholder imagery), `Metric`, and `EmptyState`.
 - `data/customerExperience.ts` - Replaceable customer UX data for suggestions, category cards, filter locations, profile seed fields, and recent conversations.
 - `data/merchantExperience.ts` - Replaceable merchant dashboard seed data for metrics, low-stock threshold, and support queue examples.
 - `data/merchantOnboarding.ts` - Replaceable merchant onboarding options for categories, fulfilment methods, payment choices, trust settings, tone, and launch checklist.
@@ -118,29 +119,19 @@ Main customer commerce feature area. It keeps UI, mock data, logic, and shared t
 
 ### `src/components/`
 
-Reusable TypeScript components used by secondary routes and the hub.
+Application-wide UI that is not specific to the commerce feature.
 
-- `auth/AuthFormFields.tsx` - Shared authentication form fields for `/auth`.
-- `landing/LandingPage.tsx` - Public marketing/introductory page for `/`, with descriptive feature content and the reusable customer/merchant login/signup flow embedded directly in the landing experience.
-- `pages/AuthExperience.tsx` - Auth/onboarding preview experience.
-- `pages/HubLandingPage.tsx` - Explanatory project hub page.
-- `ui/Button.tsx`, `ui/Card.tsx`, `ui/IconButton.tsx`, `ui/InputField.tsx`, `ui/SectionHeading.tsx` - Shared UI primitives.
-- `hub/ChatDemo.tsx` - Hub conversational ordering demo.
-- `hub/EscrowFlow.tsx` - Hub escrow flow visualization.
-- `hub/FeaturesTabs.tsx` - Hub feature tabs.
-- `hub/HeroChat.tsx` - Hub hero chat animation.
+- `landing/LandingPage.tsx` - Public landing page for `/`. Describes the product and embeds the real `AuthFlow` in its `#access` panel, routing customers to `/discover` and merchants to `/merchant/orders` on completion.
+- `ui/` - Shadcn primitives (`button`, `card`, `input`, `textarea`, `label`, `badge`, `dialog`, `sheet`, `tabs`, `select`, `separator`, `skeleton`). Generated by the Shadcn CLI and styled through the semantic tokens in `globals.css`.
 
 ### `src/data/` and `src/lib/`
 
-Shared support for the retained hub and auth routes.
-
-- `src/data/hubData.ts` - Mock data for hub demo flows.
 - `src/data/landingPage.ts` - Typed landing-page content for stats, feature cards, journey steps, and the hero order preview.
-- `src/lib/iconography.ts` - Shared icon mapping based on `react-icons`.
+- `src/lib/cn.ts` - Class-name merge helper (`clsx` + `tailwind-merge`) used by every component so conflicting Tailwind utilities resolve last-wins.
 
 ### `messages/` and `i18n/`
 
-- `messages/en.json` - English copy used by translated components and secondary routes.
+- `messages/en.json` - English copy. The `hub` and `auth` namespaces are currently unused after those screens were retired; the i18n wiring is retained for translating the commerce app.
 - `i18n/request.ts`, `i18n/routing.ts` - `next-intl` configuration.
 
 ### Project Configuration

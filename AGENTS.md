@@ -63,7 +63,7 @@ This version has breaking changes - APIs, conventions, and file structure may al
 ## UI And Frontend Rules
 
 - Keep the interface full screen and responsive across mobile, tablet, and desktop.
-- Use the established font setup: Alata for headings and Google Sans for body text unless the user changes it.
+- Use the established font setup loaded in `src/app/layout.tsx`: DM Sans for headings (`--font-aicos-heading`) and Jost for body text (`--font-aicos-body`), unless the user changes it.
 - Use simulated loading screens, animations, and transitions where they make flows feel clearer.
 - Prefer familiar controls and icons for actions. Use existing icon libraries when available.
 - Ensure text fits within its containers on all viewport sizes.
