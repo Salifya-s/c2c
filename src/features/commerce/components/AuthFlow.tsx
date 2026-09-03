@@ -233,7 +233,7 @@ export const AuthFlow = ({
           Password + OTP security
         </span>
         <div className="mt-8">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary-foreground/60">ZamComm</p>
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-primary-foreground/60">Tantika</p>
           <h1 className="mt-2 font-display text-2xl font-semibold leading-tight lg:text-3xl">{title}</h1>
           <p className="mt-3 max-w-md text-sm leading-6 text-primary-foreground/70">{description}</p>
         </div>
@@ -273,6 +273,11 @@ export const AuthFlow = ({
           />
         </div>
 
+        {/* Keyed on the active step so each transition is a distinct fade. */}
+        <div
+          key={pendingChallenge ? 'otp' : role === 'merchant' && mode === 'register' ? 'wizard' : 'password'}
+          className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300"
+        >
         {pendingChallenge ? (
           <OtpStep
             contact={pendingChallenge.contact}
@@ -319,6 +324,7 @@ export const AuthFlow = ({
             onSubmit={handlePasswordSubmit}
           />
         )}
+        </div>
       </section>
     </section>
   );
@@ -535,7 +541,7 @@ const MerchantOnboardingWizard = ({
   const [step, setStep] = useState(0);
   const steps = [
     {title: 'Who is setting up?', helper: 'Start with account details and a password.'},
-    {title: 'What do you sell?', helper: 'Tell ZamComm what to recommend when customers search.'},
+    {title: 'What do you sell?', helper: 'Tell Tantika what to recommend when customers search.'},
     {title: 'Where can customers find you?', helper: 'Neighbourhoods are enough for a quick setup.'},
     {title: 'How should orders work?', helper: 'Pick the ways you can fulfil orders today.'},
     {title: 'How should customers trust you?', helper: 'These settings shape payment protection and store confidence.'},
@@ -577,7 +583,7 @@ const MerchantOnboardingWizard = ({
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-border/50 p-4">
+      <div key={step} className="mt-4 rounded-lg border border-border/50 p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
         <p className="text-xs font-medium text-primary">{steps[step].helper}</p>
         <h2 className="mt-1 font-display text-xl font-semibold">{steps[step].title}</h2>
 
@@ -719,7 +725,7 @@ const MerchantLaunchSummary = ({answers}: {answers: MerchantOnboardingAnswers}) 
       <SummaryTile icon={<FiPhone aria-hidden />} label="Contact" value={answers.mobile} />
     </div>
     <div className="rounded-lg border border-border/50 p-4">
-      <p className="text-sm font-medium">ZamComm launch checklist</p>
+      <p className="text-sm font-medium">Tantika launch checklist</p>
       <ul className="mt-2 grid gap-1.5">
         {launchChecklist.map((item) => (
           <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">

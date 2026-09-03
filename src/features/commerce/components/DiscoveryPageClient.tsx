@@ -88,7 +88,7 @@ export const DiscoveryPageClient = () => {
     return (
       <AuthFlow
         initialRole="customer"
-        title="Login or join ZamComm"
+        title="Login or join Tantika"
         description="Preview how customers and merchants enter the commerce workspace before moving into discovery, chat, orders, and fulfilment."
         onComplete={(nextSession) => {
           if (nextSession.role === 'merchant') {
@@ -125,7 +125,7 @@ export const DiscoveryPageClient = () => {
 
   return (
     <AppShell
-      brand={{eyebrow: 'AICOS', title: 'ZamComm'}}
+      brand={{eyebrow: 'Tantika', title: 'Customer app'}}
       nav={tabs}
       activeId={activeTab}
       onNavigate={setActiveTab}
@@ -176,6 +176,8 @@ export const DiscoveryPageClient = () => {
         </>
       }
     >
+      {/* Keyed so switching tabs re-mounts and fades the panel in. */}
+      <div key={activeTab} className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
       {activeTab === 'discover' ? (
         <DiscoverTab
           query={query}
@@ -194,6 +196,7 @@ export const DiscoveryPageClient = () => {
       {activeTab === 'chat' ? <ChatTab /> : null}
       {activeTab === 'orders' ? <OrdersTab /> : null}
       {activeTab === 'profile' ? <ProfileTab session={session} /> : null}
+      </div>
     </AppShell>
   );
 };

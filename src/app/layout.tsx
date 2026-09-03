@@ -19,7 +19,7 @@ const aicosBody = Jost({
 });
 
 export const metadata: Metadata = {
-  title: 'AICOS Zambia Commerce Prototype',
+  title: 'Tantika - Zambia Commerce Prototype',
   description:
     'Working customer proof of concept for conversational commerce, escrow checkout, and order fulfilment tracking.'
 };

@@ -11,6 +11,8 @@ import {
   FiTwitter
 } from 'react-icons/fi';
 
+import {BRAND_NAME, Logo} from '@/src/components/brand/Logo';
+import {Reveal} from '@/src/components/landing/Reveal';
 import {Button} from '@/src/components/ui/button';
 import {Card} from '@/src/components/ui/card';
 import {Textarea} from '@/src/components/ui/textarea';
@@ -72,12 +74,12 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
 
       {/* Hero: describe a store, and drop straight into merchant onboarding with it. */}
       <section className="border-b border-border/50 px-5 py-20 sm:px-8 lg:py-28">
-        <div className="mx-auto max-w-3xl text-center">
+        <Reveal className="mx-auto max-w-3xl text-center">
           <h1 className="font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
             Describe your business. Start selling today.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
-            AICOS turns one sentence into a working storefront for Zambian sellers, with chat, multi-store carts,
+            {BRAND_NAME} turns one sentence into a working storefront for Zambian sellers, with chat, multi-store carts,
             protected checkout, and delivery tracking already connected.
           </p>
 
@@ -122,7 +124,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
               </button>
             ))}
           </div>
-        </div>
+        </Reveal>
 
         {/* Preview tiles standing in for the generated-store screenshots. */}
         <div className="mx-auto mt-14 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -148,11 +150,11 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
       {/* Benefits: three restrained columns, no cards. */}
       <section id="why" className="bg-background px-5 py-20 sm:px-8">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-3">
-          {landingBenefits.map((benefit) => (
-            <div key={benefit.title}>
+          {landingBenefits.map((benefit, index) => (
+            <Reveal key={benefit.title} delay={index * 90}>
               <h2 className="font-display text-lg font-semibold">{benefit.title}</h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">{benefit.description}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
 
@@ -168,14 +170,14 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
 
       {/* Social proof: one quote, then the seeded stores as a logo row. */}
       <section className="px-5 py-20 sm:px-8">
-        <figure className="mx-auto max-w-3xl text-center">
+        <Reveal as="figure" className="mx-auto max-w-3xl text-center">
           <blockquote className="font-display text-xl leading-9 sm:text-2xl">
             &ldquo;{landingTestimonial.quote}&rdquo;
           </blockquote>
           <figcaption className="mt-6 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{landingTestimonial.author}</span> - {landingTestimonial.role}
           </figcaption>
-        </figure>
+        </Reveal>
 
         <ul className="mx-auto mt-14 flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
           {landingMerchantLogos.map((logo) => (
@@ -193,16 +195,18 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
             All that you need to help you start selling
           </h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {landingFeatures.map((feature) => {
+            {landingFeatures.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card key={feature.title} className="gap-0 rounded-lg border-border/50 bg-card p-5 shadow-none">
+                <Reveal key={feature.title} delay={index * 80}>
+                <Card className="gap-0 h-full rounded-lg border-border/50 bg-card p-5 shadow-none">
                   <span className="grid size-10 place-items-center rounded-md bg-primary/10 text-primary">
                     <Icon aria-hidden size={18} />
                   </span>
                   <h3 className="mt-4 font-display text-base font-semibold">{feature.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{feature.description}</p>
                 </Card>
+                </Reveal>
               );
             })}
           </div>
@@ -217,7 +221,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
           </h2>
           <ol className="grid gap-6">
             {landingSteps.map((step, index) => (
-              <li key={step.title} className="grid grid-cols-[2.5rem_1fr] gap-4">
+              <Reveal as="li" key={step.title} delay={index * 90} className="grid grid-cols-[2.5rem_1fr] gap-4">
                 <span className="grid size-10 place-items-center rounded-full bg-foreground text-sm font-semibold text-background">
                   {index + 1}
                 </span>
@@ -225,7 +229,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
                   <h3 className="font-display text-base font-semibold">{step.title}</h3>
                   <p className="mt-1.5 text-sm leading-7 text-muted-foreground">{step.description}</p>
                 </div>
-              </li>
+              </Reveal>
             ))}
           </ol>
         </div>
@@ -233,7 +237,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
 
       {/* Access: login and onboarding, immediately before the footer. */}
       <section id="access" className="scroll-mt-16 border-t border-border/50 bg-background px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-3xl text-center">
+        <Reveal className="mx-auto max-w-3xl text-center">
           <h2 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
             Start selling, or sign in and keep shopping
           </h2>
@@ -241,7 +245,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
             One account covers both sides of the marketplace. Customers land in discovery, merchants land in the
             fulfilment dashboard.
           </p>
-        </div>
+        </Reveal>
 
         <div className="mx-auto mt-10 max-w-5xl">
           <AuthFlow
@@ -271,11 +275,8 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
 const SiteHeader = ({onStartFree}: {onStartFree: () => void}) => (
   <header className="sticky top-0 z-40 border-b border-border/50 bg-card/95 backdrop-blur">
     <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
-      <Link href="/" className="flex items-center gap-2.5" aria-label="AICOS home">
-        <span className="grid size-8 place-items-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
-          AI
-        </span>
-        <span className="font-display text-base font-semibold">AICOS Commerce</span>
+      <Link href="/" aria-label={`${BRAND_NAME} home`}>
+        <Logo size="sm" />
       </Link>
 
       <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
@@ -301,6 +302,7 @@ const SiteHeader = ({onStartFree}: {onStartFree: () => void}) => (
 const SiteFooter = () => (
   <footer className="mt-auto bg-foreground px-5 py-16 text-background sm:px-8">
     <div className="mx-auto max-w-6xl">
+      <Logo tone="inverse" className="mb-10" />
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
         {landingFooterGroups.map((group) => (
           <div key={group.heading}>
@@ -326,7 +328,7 @@ const SiteFooter = () => (
 
       <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-background/15 pt-8">
         <p className="text-xs text-background/60">
-          &copy; {new Date().getFullYear()} AICOS Commerce. Prototype for Zambian conversational commerce.
+          &copy; {new Date().getFullYear()} {BRAND_NAME}. Prototype for Zambian conversational commerce.
         </p>
 
         <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -341,10 +343,10 @@ const SiteFooter = () => (
 
         <ul className="flex items-center gap-3">
           {[
-            {Icon: FiTwitter, label: 'AICOS on X'},
-            {Icon: FiInstagram, label: 'AICOS on Instagram'},
-            {Icon: FiFacebook, label: 'AICOS on Facebook'},
-            {Icon: FiLinkedin, label: 'AICOS on LinkedIn'}
+            {Icon: FiTwitter, label: `${BRAND_NAME} on X`},
+            {Icon: FiInstagram, label: `${BRAND_NAME} on Instagram`},
+            {Icon: FiFacebook, label: `${BRAND_NAME} on Facebook`},
+            {Icon: FiLinkedin, label: `${BRAND_NAME} on LinkedIn`}
           ].map(({Icon, label}) => (
             <li key={label}>
               <span className="grid size-8 place-items-center rounded-full bg-background/10 text-background/70" title={label}>

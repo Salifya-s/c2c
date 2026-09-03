@@ -73,7 +73,7 @@ export const MerchantOrdersPageClient = () => {
 
   return (
     <AppShell
-      brand={{eyebrow: 'Merchant OS', title: session.businessName ?? session.name}}
+      brand={{eyebrow: 'Tantika', title: session.businessName ?? session.name}}
       nav={views}
       activeId={selectedView}
       onNavigate={setSelectedView}
@@ -125,9 +125,11 @@ export const MerchantOrdersPageClient = () => {
           <Metric label="Avg response" value={merchantDashboardSeed.averageResponse} />
         </div>
 
-        {selectedView === 'orders' ? <MerchantOrderQueue orders={orders} updateOrder={updateOrder} /> : null}
-        {selectedView === 'inventory' ? <MerchantInventory /> : null}
-        {selectedView === 'support' ? <MerchantSupport /> : null}
+        <div key={selectedView} className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
+          {selectedView === 'orders' ? <MerchantOrderQueue orders={orders} updateOrder={updateOrder} /> : null}
+          {selectedView === 'inventory' ? <MerchantInventory /> : null}
+          {selectedView === 'support' ? <MerchantSupport /> : null}
+        </div>
       </section>
     </AppShell>
   );

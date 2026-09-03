@@ -35,7 +35,7 @@ export type LandingStep = {
 
 /** Top navigation. Anchors resolve to section ids on the page. */
 export const landingNavLinks: Array<{ label: string; href: string }> = [
-  { label: 'Why AICOS', href: '#why' },
+  { label: 'Why Tantika', href: '#why' },
   { label: 'How it works', href: '#how' },
   { label: 'For merchants', href: '#merchants' }
 ];
@@ -60,7 +60,7 @@ export const landingBenefits: LandingStep[] = [
   {
     title: 'Easy to use',
     description:
-      'Describe the business in one sentence. AICOS turns it into a working storefront with products, delivery options, and protected checkout already wired up.'
+      'Describe the business in one sentence. Tantika turns it into a working storefront with products, delivery options, and protected checkout already wired up.'
   },
   {
     title: 'Quick to build',
@@ -171,7 +171,7 @@ export const landingFooterGroups: Array<{ heading: string; links: Array<{ label:
   {
     heading: 'Company',
     links: [
-      { label: 'About AICOS', href: '#why' },
+      { label: 'About Tantika', href: '#why' },
       { label: 'Careers', href: '#why' },
       { label: 'Privacy', href: '#why' },
       { label: 'Terms', href: '#why' }
