@@ -136,6 +136,29 @@ const run = async () => {
     return 'first answer expanded';
   });
 
+  await step(page, 'category carousel autoplays and pauses on hover', async () => {
+    await page.goto(BASE_URL, {waitUntil: 'networkidle'});
+    const carousel = page.getByRole('region', {name: /trade on Tantika/i});
+    await carousel.scrollIntoViewIfNeeded();
+
+    const activeDot = () =>
+      carousel.locator('[role="tab"][aria-selected="true"]').first().getAttribute('aria-label');
+
+    const before = await activeDot();
+    await page.waitForTimeout(4500);
+    const after = await activeDot();
+    if (before === after) throw new Error(`carousel never advanced (stuck on "${before}")`);
+
+    // Hovering a slide must stop autoplay and hold position.
+    await carousel.getByRole('group').first().hover();
+    const heldFrom = await activeDot();
+    await page.waitForTimeout(4500);
+    const heldTo = await activeDot();
+    if (heldFrom !== heldTo) throw new Error('carousel kept advancing while hovered');
+
+    return `advanced, then held on hover at "${heldTo}"`;
+  });
+
   await step(page, 'hero generate seeds onboarding', async () => {
     await page.goto(BASE_URL, {waitUntil: 'networkidle'});
     const idea = 'A tailor in Kabulonga doing repairs';

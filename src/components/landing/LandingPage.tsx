@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi';
 
 import {BRAND_NAME, Logo} from '@/src/components/brand/Logo';
+import {CategoryCarousel} from '@/src/components/landing/CategoryCarousel';
 import {Reveal} from '@/src/components/landing/Reveal';
 import {
   Accordion,
@@ -88,10 +89,14 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
           drops a flex item's automatic minimum size to zero, which let the whole
           hero collapse to a sliver. */}
       <section className="relative shrink-0 overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-green-soft via-brand-teal-soft/40 to-transparent"
-        />
+        {/* Layered brand wash: a vertical base plus two soft radial blooms, all
+            behind the content and non-interactive. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-green-soft via-brand-teal-soft/50 to-card" />
+          <div className="absolute -left-32 -top-40 size-[34rem] rounded-full bg-brand-green/20 blur-3xl" />
+          <div className="absolute -right-40 -top-24 size-[38rem] rounded-full bg-brand-blue/20 blur-3xl" />
+          <div className="absolute -bottom-24 left-1/3 size-[30rem] rounded-full bg-brand-teal/10 blur-3xl" />
+        </div>
 
         <Reveal className="relative mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-card px-3 py-1 text-xs font-medium text-brand-teal">
@@ -187,28 +192,9 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
             </p>
           </Reveal>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {landingCategories.map((category, index) => (
-              <Reveal key={category.title} delay={index * 70}>
-                <article className="group h-full overflow-hidden rounded-lg border border-border/50 bg-card transition hover:-translate-y-1 hover:shadow-lg">
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <Image
-                      src={category.src}
-                      alt={category.alt}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
-                      className="object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between gap-3 p-4">
-                    <h3 className="font-display text-base font-semibold">{category.title}</h3>
-                    <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', category.accent)}>Live</span>
-                  </div>
-                </article>
-              </Reveal>
-            ))}
-          </div>
+          <Reveal delay={120} className="mt-10">
+            <CategoryCarousel categories={landingCategories} />
+          </Reveal>
         </div>
       </section>
 
