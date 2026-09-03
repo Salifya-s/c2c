@@ -66,32 +66,32 @@ type AuthStartPayload = {
 type RoleContent = {
   label: string;
   icon: typeof FiUser;
-  defaultName: string;
-  defaultUsername: string;
-  defaultContact: string;
-  defaultPassword: string;
-  defaultBusiness?: string;
+  /** A contact that exists in the seeded dev store, so login works out of the box. */
+  demoContact: string;
+  demoLabel: string;
   bullets: string[];
 };
+
+/**
+ * Development only. Every seeded account in `server/auth/store.ts` is created
+ * with this password (`DEFAULT_MOCK_PASSWORD`), so the login form can prefill
+ * working credentials. Replace with a real identity provider before production.
+ */
+const DEMO_PASSWORD = 'password123';
 
 const roleContent: Record<CommerceUserRole, RoleContent> = {
   customer: {
     label: 'Customer',
     icon: FiUser,
-    defaultName: 'Naledi Mwansa',
-    defaultUsername: '@naledi.m',
-    defaultContact: 'naledi@example.com',
-    defaultPassword: 'customer123',
+    demoContact: '+260977111001',
+    demoLabel: 'Chileshe Kapwepwe',
     bullets: ['Protected checkout', 'Saved carts by merchant', 'Order tracking from one place']
   },
   merchant: {
     label: 'Merchant',
     icon: FiBriefcase,
-    defaultName: 'Tasha Mwila',
-    defaultUsername: '@tashabakes',
-    defaultContact: '+260966000014',
-    defaultPassword: 'merchant123',
-    defaultBusiness: "Tasha's Cakes",
+    demoContact: '+260966000014',
+    demoLabel: "Tasha's Cakes",
     bullets: ['Guided store setup', 'Order fulfilment dashboard', 'Customer support tools']
   }
 };
@@ -106,9 +106,9 @@ export const AuthFlow = ({
 }: AuthFlowProps) => {
   const [role, setRole] = useState<CommerceUserRole>(initialRole);
   const [mode, setMode] = useState<AuthMode>('login');
-  const [form, setForm] = useState(() => buildDefaultForm(initialRole));
+  const [form, setForm] = useState(() => buildDefaultForm(initialRole, 'login'));
   const [merchantAnswers, setMerchantAnswers] = useState<MerchantOnboardingAnswers>(() => buildDefaultMerchantAnswers());
-  const [merchantPassword, setMerchantPassword] = useState(roleContent.merchant.defaultPassword);
+  const [merchantPassword, setMerchantPassword] = useState('');
   const [pendingChallenge, setPendingChallenge] = useState<{contact: string; purpose: AuthMode} | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -144,9 +144,9 @@ export const AuthFlow = ({
 
   const updateRole = (nextRole: CommerceUserRole) => {
     setRole(nextRole);
-    setForm(buildDefaultForm(nextRole));
+    setForm(buildDefaultForm(nextRole, 'login'));
     setMerchantAnswers(buildDefaultMerchantAnswers());
-    setMerchantPassword(roleContent.merchant.defaultPassword);
+    setMerchantPassword('');
     setMode('login');
     resetMessages();
   };
@@ -253,6 +253,7 @@ export const AuthFlow = ({
             value={mode}
             onChange={(next) => {
               setMode(next);
+              setForm(buildDefaultForm(role, next));
               resetMessages();
             }}
             ariaLabel="Login or register"
@@ -417,6 +418,13 @@ const PasswordStep = ({
     <Button type="submit" size="lg" disabled={submitting} className="w-full">
       {submitting ? 'Working...' : actionLabel}
     </Button>
+    {mode === 'login' ? (
+      <p className="text-xs text-muted-foreground">
+        Development only: prefilled with the seeded {roleContent[role].label.toLowerCase()} account{' '}
+        <span className="font-medium">{roleContent[role].demoLabel}</span>. Every seeded account uses the same demo
+        password.
+      </p>
+    ) : null}
   </form>
 );
 
@@ -468,17 +476,19 @@ const OtpStep = ({
   </section>
 );
 
-const buildDefaultForm = (role: CommerceUserRole): PasswordFormState => ({
-  name: roleContent[role].defaultName,
-  username: roleContent[role].defaultUsername,
-  contact: roleContent[role].defaultContact,
-  password: roleContent[role].defaultPassword,
-  businessName: roleContent[role].defaultBusiness ?? ''
-});
+/**
+ * Login prefills a seeded demo account so the prototype is usable immediately.
+ * Register starts empty: prefilling a fixed contact made every registration
+ * collide with the seeded account of the same number.
+ */
+const buildDefaultForm = (role: CommerceUserRole, mode: AuthMode): PasswordFormState =>
+  mode === 'login'
+    ? {name: '', username: '', contact: roleContent[role].demoContact, password: DEMO_PASSWORD, businessName: ''}
+    : {name: '', username: '', contact: '', password: '', businessName: ''};
 
 const buildDefaultMerchantAnswers = (): MerchantOnboardingAnswers => ({
   ownerName: 'Tasha Mwila',
-  mobile: '+260966000014',
+  mobile: '',
   businessName: "Tasha's Cakes",
   category: 'Bakery and cakes',
   shortDescription: 'Fresh cakes, cupcakes, and party bakes made to order in Lusaka.',
