@@ -84,7 +84,10 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
       <SiteHeader onStartFree={() => openAuth('merchant', 'register')} />
 
       {/* Hero: describe a store, and drop straight into merchant onboarding with it. */}
-      <section className="relative overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
+      {/* shrink-0 is load-bearing: this is a flex child, and `overflow-hidden`
+          drops a flex item's automatic minimum size to zero, which let the whole
+          hero collapse to a sliver. */}
+      <section className="relative shrink-0 overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-green-soft via-brand-teal-soft/40 to-transparent"
