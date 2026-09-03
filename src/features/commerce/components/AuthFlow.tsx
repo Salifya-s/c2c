@@ -41,6 +41,10 @@ type AuthFlowProps = {
   onComplete: (session: CommerceSession) => void;
   alternateAction?: ReactNode;
   presentation?: 'full' | 'embedded';
+  /** Opens straight into register, e.g. when arriving from a sign-up call to action. */
+  initialMode?: AuthMode;
+  /** Seeds the merchant wizard's store description from the landing page hero. */
+  initialStoreIdea?: string;
 };
 
 type AuthMode = 'login' | 'register';
@@ -102,12 +106,14 @@ export const AuthFlow = ({
   description,
   onComplete,
   alternateAction,
-  presentation = 'full'
+  presentation = 'full',
+  initialMode = 'login',
+  initialStoreIdea
 }: AuthFlowProps) => {
   const [role, setRole] = useState<CommerceUserRole>(initialRole);
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [form, setForm] = useState(() => buildDefaultForm(initialRole, 'login'));
-  const [merchantAnswers, setMerchantAnswers] = useState<MerchantOnboardingAnswers>(() => buildDefaultMerchantAnswers());
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [form, setForm] = useState(() => buildDefaultForm(initialRole, initialMode));
+  const [merchantAnswers, setMerchantAnswers] = useState<MerchantOnboardingAnswers>(() => buildDefaultMerchantAnswers(initialStoreIdea));
   const [merchantPassword, setMerchantPassword] = useState('');
   const [pendingChallenge, setPendingChallenge] = useState<{contact: string; purpose: AuthMode} | null>(null);
   const [otpCode, setOtpCode] = useState('');
@@ -145,7 +151,7 @@ export const AuthFlow = ({
   const updateRole = (nextRole: CommerceUserRole) => {
     setRole(nextRole);
     setForm(buildDefaultForm(nextRole, 'login'));
-    setMerchantAnswers(buildDefaultMerchantAnswers());
+    setMerchantAnswers(buildDefaultMerchantAnswers(initialStoreIdea));
     setMerchantPassword('');
     setMode('login');
     resetMessages();
@@ -492,12 +498,12 @@ const buildDefaultForm = (role: CommerceUserRole, mode: AuthMode): PasswordFormS
     ? {name: '', username: '', contact: roleContent[role].demoContact, password: DEMO_PASSWORD, businessName: ''}
     : {name: '', username: '', contact: '', password: '', businessName: ''};
 
-const buildDefaultMerchantAnswers = (): MerchantOnboardingAnswers => ({
+const buildDefaultMerchantAnswers = (storeIdea?: string): MerchantOnboardingAnswers => ({
   ownerName: 'Tasha Mwila',
   mobile: '',
   businessName: "Tasha's Cakes",
   category: 'Bakery and cakes',
-  shortDescription: 'Fresh cakes, cupcakes, and party bakes made to order in Lusaka.',
+  shortDescription: storeIdea?.trim() || 'Fresh cakes, cupcakes, and party bakes made to order in Lusaka.',
   mainOffer: 'Chocolate birthday cake',
   startingPrice: '450',
   location: 'Roma, Lusaka',
