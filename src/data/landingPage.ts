@@ -184,3 +184,106 @@ export const landingFooterLegal = [
   { label: 'Terms of service', href: '#why' },
   { label: 'Cookie preferences', href: '#why' }
 ];
+
+/**
+ * Landing photography.
+ *
+ * Unsplash-hosted while the product has no first-party imagery. Each entry
+ * records what the photo actually depicts so alt text stays accurate; swap
+ * `src` for `/public` assets or a CDN when real photography exists.
+ */
+export type LandingImage = { src: string; alt: string };
+
+const unsplash = (id: string, width = 900) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=70`;
+
+export const landingHeroImage: LandingImage = {
+  src: unsplash('photo-1687422809654-579d81c29d32', 1200),
+  alt: 'A vendor standing at a fruit stand, holding a mobile phone'
+};
+
+export const landingMerchantImage: LandingImage = {
+  src: unsplash('photo-1687422808565-929533931584', 1100),
+  alt: 'A market seller in front of a fruit stand giving a thumbs up'
+};
+
+export const landingCoverageImage: LandingImage = {
+  src: unsplash('photo-1776153380872-108ba14dc63d', 1100),
+  alt: 'A busy marketplace with crowded stalls and surrounding buildings'
+};
+
+/** Category tiles. `accent` drives the tile's tint so the grid carries colour. */
+export const landingCategories: Array<LandingImage & { title: string; accent: string }> = [
+  {
+    title: 'Fresh produce',
+    accent: 'bg-brand-green-soft text-brand-green',
+    src: unsplash('photo-1734255026082-82fdc81991f0'),
+    alt: 'People gathered around a table filled with tomatoes'
+  },
+  {
+    title: 'Groceries',
+    accent: 'bg-brand-teal-soft text-brand-teal',
+    src: unsplash('photo-1552710218-bd32b0c98626'),
+    alt: 'Brown seeds and grains on display at a market stall'
+  },
+  {
+    title: 'Fashion and bags',
+    accent: 'bg-brand-blue-soft text-brand-blue',
+    src: unsplash('photo-1692689383138-c2df3476072c'),
+    alt: 'A group of colourful bags arranged on a table'
+  },
+  {
+    title: 'Fish and meat',
+    accent: 'bg-brand-teal-soft text-brand-teal',
+    src: unsplash('photo-1783408355128-c6a45a91c130'),
+    alt: 'Fresh fish displayed at a busy market stall'
+  },
+  {
+    title: 'Street food',
+    accent: 'bg-brand-green-soft text-brand-green',
+    src: unsplash('photo-1773858441067-de99ed159a95'),
+    alt: 'A smiling vendor sitting in a fruit market'
+  },
+  {
+    title: 'Everyday delivery',
+    accent: 'bg-brand-blue-soft text-brand-blue',
+    src: unsplash('photo-1734255620882-77378ba420bb'),
+    alt: 'A man pushing a wheelbarrow filled with watermelons'
+  }
+];
+
+/** Numbers band. Prototype figures - replace with real analytics before launch. */
+export const landingImpactStats: LandingStat[] = [
+  { label: 'Minutes to open a store', value: '6' },
+  { label: 'Steps from chat to paid order', value: '4' },
+  { label: 'Held in escrow until delivery', value: '100%' },
+  { label: 'Lusaka delivery zones covered', value: '12' }
+];
+
+export const landingFaqs: Array<{ question: string; answer: string }> = [
+  {
+    question: 'What does it cost to open a store?',
+    answer:
+      'Nothing to set up. You describe the business, answer six short questions, and the storefront is live. Payment protection fees are only applied to completed orders.'
+  },
+  {
+    question: 'How does payment protection work?',
+    answer:
+      'A customer pays at checkout and the money is held rather than sent straight to the seller. It is released once delivery or pickup is confirmed with the order PIN, so both sides are covered.'
+  },
+  {
+    question: 'Do I need a smartphone or a computer?',
+    answer:
+      'A phone is enough. Onboarding, the order queue, and fulfilment actions are all designed to work on a small screen with an intermittent connection.'
+  },
+  {
+    question: 'Can customers buy from several sellers at once?',
+    answer:
+      'Yes. Carts are kept separately per store, so a customer can build orders with several merchants in parallel and each seller still receives one clean order.'
+  },
+  {
+    question: 'How do deliveries happen?',
+    answer:
+      'Sellers choose delivery, pickup, or both. Delivery quotes and time slots come from the courier integration, and the customer tracks each status change as it happens.'
+  }
+];

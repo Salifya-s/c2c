@@ -63,6 +63,15 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Tantika logo palette */
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-soft: var(--brand-green-soft);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-teal-soft: var(--brand-teal-soft);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-soft: var(--brand-blue-soft);
+  --color-brand-navy: var(--brand-navy);
+
   /* Escrow / fulfilment tones - not part of the stock Shadcn set */
   --color-success: var(--success);
   --color-success-muted: var(--success-muted);
@@ -102,6 +111,17 @@
   --border: #e8e0d8;                 /* ink-5          */
   --input: #e8e0d8;                  /* ink-5          */
   --ring: #2dba72;                   /* zam-green-400  */
+
+  /* Tantika logo palette. Used for the mark, landing accents, and section
+     variety. The semantic tokens above are unchanged, so the app's chrome
+     still runs on the zam/ink ramps. */
+  --brand-green: #3fbe4b;
+  --brand-green-soft: #eaf8ec;
+  --brand-teal: #12a19a;
+  --brand-teal-soft: #e6f6f5;
+  --brand-blue: #1b87c9;
+  --brand-blue-soft: #e8f3fb;
+  --brand-navy: #0f1f3d;
 
   /* Escrow / fulfilment tones */
   --success: #126e3e;                /* zam-green-700  */

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import {useCallback, useState} from 'react';
 import {useRouter} from 'next/navigation';
@@ -13,17 +14,27 @@ import {
 
 import {BRAND_NAME, Logo} from '@/src/components/brand/Logo';
 import {Reveal} from '@/src/components/landing/Reveal';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from '@/src/components/ui/accordion';
 import {Button} from '@/src/components/ui/button';
-import {Card} from '@/src/components/ui/card';
 import {Textarea} from '@/src/components/ui/textarea';
 import {cn} from '@/src/lib/cn';
 import {
-  heroOrderPreview,
   heroPromptExamples,
   landingBenefits,
+  landingCategories,
+  landingCoverageImage,
+  landingFaqs,
   landingFeatures,
   landingFooterGroups,
   landingFooterLegal,
+  landingHeroImage,
+  landingImpactStats,
+  landingMerchantImage,
   landingMerchantLogos,
   landingNavLinks,
   landingStats,
@@ -49,7 +60,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
   const [authRole, setAuthRole] = useState<CommerceUserRole>(initialRole);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [seededIdea, setSeededIdea] = useState('');
-  // AuthFlow seeds its role, mode, and wizard answers from props on first render,
+  // AuthFlow seeds role, mode, and wizard answers from props on first render,
   // so changing them later needs a remount rather than a re-render.
   const [authInstance, setAuthInstance] = useState(0);
 
@@ -73,9 +84,17 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
       <SiteHeader onStartFree={() => openAuth('merchant', 'register')} />
 
       {/* Hero: describe a store, and drop straight into merchant onboarding with it. */}
-      <section className="border-b border-border/50 px-5 py-20 sm:px-8 lg:py-28">
-        <Reveal className="mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+      <section className="relative overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-green-soft via-brand-teal-soft/40 to-transparent"
+        />
+
+        <Reveal className="relative mx-auto max-w-3xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand-teal/30 bg-card px-3 py-1 text-xs font-medium text-brand-teal">
+            Fast commerce. Happy clients.
+          </span>
+          <h1 className="mt-5 font-display text-4xl font-semibold leading-[1.08] tracking-tight text-brand-navy sm:text-5xl lg:text-6xl">
             Describe your business. Start selling today.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
@@ -90,7 +109,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
               openAuth('merchant', 'register', storeIdea);
             }}
           >
-            <div className="rounded-lg border border-border bg-card p-2 shadow-sm focus-within:ring-[3px] focus-within:ring-ring/50">
+            <div className="rounded-lg border border-border bg-card p-2 shadow-sm focus-within:ring-[3px] focus-within:ring-brand-teal/30">
               <Textarea
                 value={storeIdea}
                 onChange={(event) => setStoreIdea(event.target.value.slice(0, STORE_IDEA_LIMIT))}
@@ -118,7 +137,7 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
                 key={example}
                 type="button"
                 onClick={() => setStoreIdea(example.slice(0, STORE_IDEA_LIMIT))}
-                className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:border-brand-teal/40 hover:bg-brand-teal-soft hover:text-brand-teal focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 {example}
               </button>
@@ -126,32 +145,76 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
           </div>
         </Reveal>
 
-        {/* Preview tiles standing in for the generated-store screenshots. */}
-        <div className="mx-auto mt-14 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {heroOrderPreview.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <Card
-                key={item.label}
-                className="gap-0 rounded-lg border-border/50 p-4 shadow-none"
-                style={{animation: `fade-in 0.35s ease-out ${index * 90}ms both`}}
-              >
-                <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
-                  <Icon aria-hidden size={17} />
-                </span>
-                <p className="mt-3 text-sm font-medium">{item.label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{item.merchant}</p>
-              </Card>
-            );
-          })}
+        <Reveal delay={120} className="relative mx-auto mt-14 max-w-5xl">
+          <div className="relative aspect-[16/7] overflow-hidden rounded-lg border border-border/50">
+            <Image
+              src={landingHeroImage.src}
+              alt={landingHeroImage.alt}
+              fill
+              priority
+              unoptimized
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="object-cover"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-t from-brand-navy/75 via-brand-navy/15 to-transparent"
+            />
+            <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-5 text-background">
+              <p className="max-w-md font-display text-lg font-semibold leading-snug">
+                Sellers already take orders by phone. {BRAND_NAME} gives that a checkout.
+              </p>
+              <Button asChild size="sm" variant="secondary">
+                <Link href={ACCESS_ANCHOR}>See how it works</Link>
+              </Button>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Categories: the colour and photography band. */}
+      <section className="border-y border-border/50 bg-background px-5 py-20 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <Reveal>
+            <h2 className="font-display text-2xl font-semibold leading-tight text-brand-navy sm:text-3xl">
+              Whatever you sell, it already fits
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+              Storefronts, carts, and delivery options adapt to the trade rather than the other way round.
+            </p>
+          </Reveal>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {landingCategories.map((category, index) => (
+              <Reveal key={category.title} delay={index * 70}>
+                <article className="group h-full overflow-hidden rounded-lg border border-border/50 bg-card transition hover:-translate-y-1 hover:shadow-lg">
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image
+                      src={category.src}
+                      alt={category.alt}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 p-4">
+                    <h3 className="font-display text-base font-semibold">{category.title}</h3>
+                    <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', category.accent)}>Live</span>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Benefits: three restrained columns, no cards. */}
-      <section id="why" className="bg-background px-5 py-20 sm:px-8">
+      {/* Benefits: three restrained columns. */}
+      <section id="why" className="px-5 py-20 sm:px-8">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-3">
           {landingBenefits.map((benefit, index) => (
             <Reveal key={benefit.title} delay={index * 90}>
+              <span className="mb-4 block h-1 w-10 rounded-full bg-gradient-to-r from-brand-green to-brand-blue" />
               <h2 className="font-display text-lg font-semibold">{benefit.title}</h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">{benefit.description}</p>
             </Reveal>
@@ -161,17 +224,29 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
         <dl className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-6 border-t border-border/50 pt-10 max-sm:grid-cols-1">
           {landingStats.map((stat) => (
             <div key={stat.label} className="text-center max-sm:text-left">
-              <dd className="font-display text-2xl font-semibold">{stat.value}</dd>
+              <dd className="font-display text-2xl font-semibold text-brand-teal">{stat.value}</dd>
               <dt className="mt-1 text-xs text-muted-foreground">{stat.label}</dt>
             </div>
           ))}
         </dl>
       </section>
 
-      {/* Social proof: one quote, then the seeded stores as a logo row. */}
+      {/* Impact band: the page's strongest block of colour. */}
+      <section className="bg-gradient-to-br from-brand-green via-brand-teal to-brand-blue px-5 py-16 text-background sm:px-8">
+        <dl className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {landingImpactStats.map((stat, index) => (
+            <Reveal key={stat.label} delay={index * 80}>
+              <dd className="font-display text-4xl font-semibold">{stat.value}</dd>
+              <dt className="mt-2 text-sm leading-6 text-background/80">{stat.label}</dt>
+            </Reveal>
+          ))}
+        </dl>
+      </section>
+
+      {/* Social proof. */}
       <section className="px-5 py-20 sm:px-8">
         <Reveal as="figure" className="mx-auto max-w-3xl text-center">
-          <blockquote className="font-display text-xl leading-9 sm:text-2xl">
+          <blockquote className="font-display text-xl leading-9 text-brand-navy sm:text-2xl">
             &ldquo;{landingTestimonial.quote}&rdquo;
           </blockquote>
           <figcaption className="mt-6 text-sm text-muted-foreground">
@@ -188,57 +263,112 @@ export const LandingPage = ({initialRole = 'customer'}: LandingPageProps) => {
         </ul>
       </section>
 
-      {/* Features: card grid, each linking into the product. */}
+      {/* Merchant spotlight: image beside copy. */}
       <section id="merchants" className="border-y border-border/50 bg-background px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="max-w-xl font-display text-2xl font-semibold leading-tight sm:text-3xl">
-            All that you need to help you start selling
-          </h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {landingFeatures.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Reveal key={feature.title} delay={index * 80}>
-                <Card className="gap-0 h-full rounded-lg border-border/50 bg-card p-5 shadow-none">
-                  <span className="grid size-10 place-items-center rounded-md bg-primary/10 text-primary">
-                    <Icon aria-hidden size={18} />
-                  </span>
-                  <h3 className="mt-4 font-display text-base font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{feature.description}</p>
-                </Card>
-                </Reveal>
-              );
-            })}
-          </div>
+        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
+          <Reveal>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-border/50">
+              <Image
+                src={landingMerchantImage.src}
+                alt={landingMerchantImage.alt}
+                fill
+                unoptimized
+                sizes="(max-width: 1024px) 100vw, 560px"
+                className="object-cover"
+              />
+            </div>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <h2 className="font-display text-2xl font-semibold leading-tight text-brand-navy sm:text-3xl">
+              Built for sellers, not for software teams
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">
+              Setup asks plain questions about the trade: what you sell, where you are, how customers collect, and how
+              you want to be paid. There is nothing to configure and nothing to install.
+            </p>
+            <ul className="mt-6 grid gap-3">
+              {landingFeatures.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <li key={feature.title} className="flex items-start gap-3">
+                    <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-md bg-brand-teal-soft text-brand-teal">
+                      <Icon aria-hidden size={16} />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium">{feature.title}</p>
+                      <p className="text-xs leading-6 text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Reveal>
         </div>
       </section>
 
-      {/* Numbered walkthrough. This is the one section beyond Shopify's structure. */}
+      {/* Numbered walkthrough beside the marketplace photograph. */}
       <section id="how" className="px-5 py-20 sm:px-8">
-        <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-start">
-          <h2 className="max-w-sm font-display text-2xl font-semibold leading-tight sm:text-3xl">
-            From a single sentence to a completed order
-          </h2>
-          <ol className="grid gap-6">
-            {landingSteps.map((step, index) => (
-              <Reveal as="li" key={step.title} delay={index * 90} className="grid grid-cols-[2.5rem_1fr] gap-4">
-                <span className="grid size-10 place-items-center rounded-full bg-foreground text-sm font-semibold text-background">
-                  {index + 1}
-                </span>
-                <div>
-                  <h3 className="font-display text-base font-semibold">{step.title}</h3>
-                  <p className="mt-1.5 text-sm leading-7 text-muted-foreground">{step.description}</p>
-                </div>
-              </Reveal>
-            ))}
-          </ol>
+        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
+          <Reveal>
+            <h2 className="max-w-md font-display text-2xl font-semibold leading-tight text-brand-navy sm:text-3xl">
+              From a single sentence to a completed order
+            </h2>
+            <ol className="mt-8 grid gap-6">
+              {landingSteps.map((step, index) => (
+                <Reveal as="li" key={step.title} delay={index * 90} className="grid grid-cols-[2.5rem_1fr] gap-4">
+                  <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue text-sm font-semibold text-background">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <h3 className="font-display text-base font-semibold">{step.title}</h3>
+                    <p className="mt-1.5 text-sm leading-7 text-muted-foreground">{step.description}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </ol>
+          </Reveal>
+
+          <Reveal delay={120}>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-border/50">
+              <Image
+                src={landingCoverageImage.src}
+                alt={landingCoverageImage.alt}
+                fill
+                unoptimized
+                sizes="(max-width: 1024px) 100vw, 520px"
+                className="object-cover"
+              />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* FAQ. */}
+      <section className="border-t border-border/50 bg-background px-5 py-20 sm:px-8">
+        <div className="mx-auto max-w-3xl">
+          <Reveal>
+            <h2 className="font-display text-2xl font-semibold leading-tight text-brand-navy sm:text-3xl">
+              Questions sellers ask first
+            </h2>
+          </Reveal>
+          <Reveal delay={80} className="mt-8">
+            <Accordion type="single" collapsible className="w-full">
+              {landingFaqs.map((faq) => (
+                <AccordionItem key={faq.question} value={faq.question}>
+                  <AccordionTrigger className="text-base">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-sm leading-7 text-muted-foreground">{faq.answer}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </Reveal>
         </div>
       </section>
 
       {/* Access: login and onboarding, immediately before the footer. */}
-      <section id="access" className="scroll-mt-16 border-t border-border/50 bg-background px-5 py-20 sm:px-8">
+      <section id="access" className="scroll-mt-16 border-t border-border/50 px-5 py-20 sm:px-8">
         <Reveal className="mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
+          <h2 className="font-display text-2xl font-semibold leading-tight text-brand-navy sm:text-3xl">
             Start selling, or sign in and keep shopping
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
@@ -300,9 +430,10 @@ const SiteHeader = ({onStartFree}: {onStartFree: () => void}) => (
 );
 
 const SiteFooter = () => (
-  <footer className="mt-auto bg-foreground px-5 py-16 text-background sm:px-8">
+  <footer className="mt-auto bg-brand-navy px-5 py-16 text-background sm:px-8">
     <div className="mx-auto max-w-6xl">
-      <Logo tone="inverse" className="mb-10" />
+      <Logo tone="inverse" withTagline className="mb-10" />
+
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
         {landingFooterGroups.map((group) => (
           <div key={group.heading}>
@@ -349,7 +480,10 @@ const SiteFooter = () => (
             {Icon: FiLinkedin, label: `${BRAND_NAME} on LinkedIn`}
           ].map(({Icon, label}) => (
             <li key={label}>
-              <span className="grid size-8 place-items-center rounded-full bg-background/10 text-background/70" title={label}>
+              <span
+                className="grid size-8 place-items-center rounded-full bg-background/10 text-background/70"
+                title={label}
+              >
                 <Icon aria-hidden size={15} />
                 <span className="sr-only">{label}</span>
               </span>
