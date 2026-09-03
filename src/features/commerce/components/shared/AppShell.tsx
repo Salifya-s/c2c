@@ -6,6 +6,14 @@ import type {IconType} from 'react-icons';
 import {Button} from '@/src/components/ui/button';
 import {cn} from '@/src/lib/cn';
 
+/** Tailwind cannot build class names at runtime, so the column count is mapped. */
+const navColumns: Record<number, string> = {
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5'
+};
+
 export type ShellNavItem<Id extends string> = {
   id: Id;
   label: string;
@@ -95,7 +103,10 @@ export const AppShell = <Id extends string>({
       {overlay}
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border/50 bg-card/95 px-2 py-1.5 backdrop-blur lg:hidden"
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 grid border-t border-border/50 bg-card/95 px-2 py-1.5 backdrop-blur lg:hidden',
+          navColumns[nav.length] ?? 'grid-cols-4'
+        )}
         aria-label={`${brand.eyebrow} tabs`}
       >
         {nav.map(({id, label, Icon}) => {
