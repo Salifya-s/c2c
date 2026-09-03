@@ -1,9 +1,10 @@
-import {useId} from 'react';
-
 import {cn} from '@/src/lib/cn';
 
 export const BRAND_NAME = 'Tantika';
 export const BRAND_TAGLINE = 'Fast commerce. Happy clients.';
+
+/** The mark, exported so favicons, emails, and share images can reuse one path. */
+export const BRAND_MARK_SRC = '/tantika-mark.svg';
 
 type LogoProps = {
   /** `full` renders the mark beside the wordmark; `mark` is the cart alone. */
@@ -20,75 +21,18 @@ const markSize = {sm: 'size-8', md: 'size-9', lg: 'size-12'} as const;
 const wordSize = {sm: 'text-lg', md: 'text-xl', lg: 'text-3xl'} as const;
 
 /**
- * The Tantika mark, drawn inline so it scales cleanly and can be recoloured
- * from tokens rather than shipped as a raster asset.
+ * The single place the brand lockup is assembled.
  *
- * This is the single place the logo is defined. Swapping in a supplied SVG or
- * an `next/image` means editing `TantikaMark` below; no call site changes.
+ * The mark is the supplied artwork, served from `public/tantika-mark.svg` with
+ * its background plate removed and the viewBox cropped to the cart, so it sits
+ * on any ground. The wordmark is set in the display font rather than using the
+ * artwork's traced letterforms, because a flat SVG cannot be recoloured and the
+ * footer needs a light wordmark on navy.
+ *
+ * A plain `img` is used rather than `next/image`: the file is first-party, is
+ * already vector, and `next/image` refuses SVG unless `dangerouslyAllowSVG` is
+ * turned on, which is not worth enabling for one static asset.
  */
-const TantikaMark = ({className}: {className?: string}) => {
-  // useId keeps the gradient id unique when several logos share a page.
-  const gradientId = useId();
-
-  return (
-    <svg viewBox="0 0 64 64" role="img" aria-hidden focusable="false" className={className}>
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--brand-green)" />
-          <stop offset="55%" stopColor="var(--brand-teal)" />
-          <stop offset="100%" stopColor="var(--brand-blue)" />
-        </linearGradient>
-      </defs>
-
-      {/* Open ring, broken on the left where the cart accelerates out of it. */}
-      <path
-        d="M15.6 16.6 A24 24 0 1 1 11.4 40.2"
-        fill="none"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="3.5"
-        strokeLinecap="round"
-      />
-
-      {/* Speed lines. */}
-      <g stroke={`url(#${gradientId})`} strokeWidth="3.5" strokeLinecap="round">
-        <line x1="6" y1="22.5" x2="17" y2="22.5" />
-        <line x1="3.5" y1="30" x2="15" y2="30" />
-        <line x1="6.5" y1="37.5" x2="16" y2="37.5" />
-      </g>
-
-      {/* Cart handle. */}
-      <path
-        d="M17.5 20.5h4.2l2.6 6.2"
-        fill="none"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Basket. */}
-      <path
-        d="M24.4 26.4h24.2a1.8 1.8 0 0 1 1.7 2.4l-3.6 10.6a2.6 2.6 0 0 1-2.5 1.8H29.6a2.6 2.6 0 0 1-2.5-1.8l-3.6-10.6a1.8 1.8 0 0 1 1.7-2.4Z"
-        fill={`url(#${gradientId})`}
-      />
-
-      {/* Confirmation tick inside the basket. */}
-      <path
-        d="m31.5 32.8 3.7 3.8 7.4-7.2"
-        fill="none"
-        stroke="#ffffff"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Wheels. */}
-      <circle cx="32.5" cy="47.5" r="3.4" fill="var(--brand-blue)" />
-      <circle cx="43.5" cy="47.5" r="3.4" fill="var(--brand-blue)" />
-    </svg>
-  );
-};
-
 export const Logo = ({
   variant = 'full',
   tone = 'default',
@@ -97,7 +41,8 @@ export const Logo = ({
   className
 }: LogoProps) => (
   <span className={cn('inline-flex items-center gap-2.5', className)}>
-    <TantikaMark className={cn('shrink-0', markSize[size])} />
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src={BRAND_MARK_SRC} alt="" aria-hidden className={cn('shrink-0', markSize[size])} />
 
     {variant === 'full' ? (
       <span className="inline-flex flex-col leading-none">
