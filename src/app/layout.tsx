@@ -38,7 +38,15 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   const intlMessages = await getMessages();
 
   return (
-    <html lang={locale} className={`${aicosHeading.variable} ${aicosBody.variable} h-full`}>
+    // Browser extensions (ad blockers, the Google Analytics opt-out add-on) add
+    // attributes to <html> before React hydrates, which React reports as a
+    // mismatch. suppressHydrationWarning applies to this element's own
+    // attributes only, so genuine mismatches inside the app still surface.
+    <html
+      lang={locale}
+      className={`${aicosHeading.variable} ${aicosBody.variable} h-full`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col font-sans antialiased">
         <NextIntlClientProvider locale={locale} messages={intlMessages}>
           {children}
