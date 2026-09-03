@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node scripts/commerce-tests.mjs"
+    "test": "node scripts/commerce-tests.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -28,6 +29,7 @@
     "@types/react-dom": "^19.1.9",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5.9.2"
   }

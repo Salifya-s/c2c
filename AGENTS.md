@@ -90,7 +90,8 @@ This version has breaking changes - APIs, conventions, and file structure may al
 ## Validation Before Handoff
 
 - Run focused validation for the files or flows changed.
-- For frontend work, check responsive behavior and key interactions in the browser when practical.
+- For frontend work, run `npm run smoke` (with `npm run dev` running). It drives the real customer and merchant journeys in headless Chrome, writes a screenshot per step to `.smoke/`, and fails on console errors, page exceptions, or failed requests. Type checks, lint, and reading the served HTML all confirm markup is correct without confirming the page renders or works - a collapsed hero passed every one of those for several commits.
+- Read the screenshots. Rendering the page is the check; inspecting markup is not a substitute.
 - For auth/backend changes, validate success and failure paths for register, login, OTP verification, session lookup, and logout.
 - Report any tests or checks that could not be run.
 
