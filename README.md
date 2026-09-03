@@ -71,7 +71,7 @@ Set `AUTH_SESSION_SECRET` in production before using the auth routes. The curren
 ### `src/app/`
 
 - `src/app/page.tsx` - Public landing page route that introduces AICOS Commerce and routes users into customer or merchant login/signup flows.
-- `src/app/layout.tsx` - Root layout, page metadata, `next-intl` provider, global CSS import, and optimized DM Sans/Jost font variables.
+- `src/app/layout.tsx` - Root layout, page metadata, global CSS import, and optimized DM Sans/Jost font variables.
 - `src/app/globals.css` - Tailwind v4 `@theme inline` block holding the zam/ink brand ramps plus the Shadcn semantic tokens mapped onto them, animations, and app-wide utility styles.
 - `src/app/discover/page.tsx` - Customer merchant/product discovery route.
 - `src/app/merchants/[merchantId]/page.tsx` - Dynamic merchant storefront route.
@@ -129,21 +129,19 @@ Application-wide UI that is not specific to the commerce feature.
 - `src/data/landingPage.ts` - Typed landing-page content for stats, feature cards, journey steps, and the hero order preview.
 - `src/lib/cn.ts` - Class-name merge helper (`clsx` + `tailwind-merge`) used by every component so conflicting Tailwind utilities resolve last-wins.
 
-### `messages/` and `i18n/`
+### Data stores
 
-- `messages/en.json` - English copy. The `hub` and `auth` namespaces are currently unused after those screens were retired; the i18n wiring is retained for translating the commerce app.
-- `i18n/request.ts`, `i18n/routing.ts` - `next-intl` configuration.
+- `data/json/customers.json`, `data/json/merchants.json` - Committed demo seed. `readAuthStore` syncs these into the auth store and stamps each with the shared demo password, so a fresh clone has working logins.
+- `.data/` - Gitignored. Holds the auth store and every account created at runtime, so registering while developing never dirties the working tree.
 
 ### Project Configuration
 
-- `package.json` - Scripts and dependencies for Next.js, React, Tailwind, and `next-intl`.
+- `package.json` - Scripts and dependencies for Next.js, React, Tailwind, Radix (via `radix-ui`), and the Shadcn support libraries (`class-variance-authority`, `clsx`, `tailwind-merge`, `tw-animate-css`, `lucide-react`).
 - `package-lock.json` - Locked dependency versions.
-- `next.config.ts` - Next.js configuration with `next-intl`.
-- `tailwind.config.ts` - Tailwind theme configuration.
+- `next.config.ts` - Next.js configuration.
 - `postcss.config.mjs` - Tailwind PostCSS setup.
 - `tsconfig.json` - TypeScript configuration and path aliases.
 - `eslint.config.mjs` - ESLint configuration.
-- `proxy.ts` - Locale/request proxy used by `next-intl`.
 - `AGENTS.md` - Local coding guidance for this Next.js version.
 - `scripts/commerce-tests.mjs` - Dependency-free service tests for search, ranking, cart restriction, pricing/payment, and the end-to-end happy path.
 
