@@ -169,6 +169,10 @@ export const AuthFlow = ({
       setPendingChallenge({contact: result.challenge.contact, purpose: result.challenge.purpose});
       setDevOtp(result.devOtp ?? '');
       setStatusMessage(`We sent a 6-digit code to ${result.challenge.contact}.`);
+    } catch {
+      // Without this the request could fail (dev server down, non-JSON response)
+      // and the button would silently reset with nothing shown to the user.
+      setStatusMessage('Could not reach the server. Check that the app is running, then try again.');
     } finally {
       setSubmitting(false);
     }
@@ -203,6 +207,8 @@ export const AuthFlow = ({
         return;
       }
       onComplete(toCommerceSession(result.user));
+    } catch {
+      setStatusMessage('Could not reach the server. Check that the app is running, then try again.');
     } finally {
       setSubmitting(false);
     }

@@ -32,41 +32,74 @@ export type MerchantRecord = {
   updatedAt: string;
 };
 
-const CUSTOMERS_JSON_PATH = path.join(process.cwd(), 'data', 'json', 'customers.json');
-const MERCHANTS_JSON_PATH = path.join(process.cwd(), 'data', 'json', 'merchants.json');
+/**
+ * Two-tier store, split so that runtime writes never dirty the working tree.
+ *
+ * - `data/json/` is committed demo seed data, read only. `readAuthStore` syncs
+ *   these records into the auth store and gives each the shared demo password,
+ *   so a fresh clone has working accounts.
+ * - `.data/` is gitignored and holds everything created at runtime. Accounts
+ *   registered while developing land here.
+ *
+ * Reads merge both, with runtime records winning on id. Production swap: replace
+ * this whole module with a database adapter; the `db` shape below already
+ * mirrors the query surface an ORM would expose.
+ */
+const SEED_DIR = path.join(process.cwd(), 'data', 'json');
+const RUNTIME_DIR = path.join(process.cwd(), '.data');
 
-const ensureDirectoryExists = async (filePath: string) => {
+const CUSTOMERS_FILE = 'customers.json';
+const MERCHANTS_FILE = 'merchants.json';
+
+const readJsonArray = async <Record>(filePath: string): Promise<Record[]> => {
+  try {
+    const data = await readFile(filePath, 'utf8');
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? (parsed as Record[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+/** Runtime records first, then any seed record not overridden by one. */
+const readMerged = async <Record extends { id: string }>(fileName: string): Promise<Record[]> => {
+  const [runtime, seed] = await Promise.all([
+    readJsonArray<Record>(path.join(RUNTIME_DIR, fileName)),
+    readJsonArray<Record>(path.join(SEED_DIR, fileName))
+  ]);
+
+  const seenIds = new Set(runtime.map((item) => item.id));
+  return [...runtime, ...seed.filter((item) => !seenIds.has(item.id))];
+};
+
+const writeRuntime = async <Record>(fileName: string, records: Record[]): Promise<void> => {
+  const filePath = path.join(RUNTIME_DIR, fileName);
   await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(records, null, 2), 'utf8');
 };
 
-// Customer Database Operations
-export const readCustomerDb = async (): Promise<CustomerRecord[]> => {
-  try {
-    const data = await readFile(CUSTOMERS_JSON_PATH, 'utf8');
-    return JSON.parse(data) as CustomerRecord[];
-  } catch {
-    return [];
-  }
+/** Upsert into the runtime file only, leaving the committed seed untouched. */
+const insertRuntime = async <Record extends { id: string }>(
+  fileName: string,
+  record: Record
+): Promise<Record> => {
+  const runtime = await readJsonArray<Record>(path.join(RUNTIME_DIR, fileName));
+  const existingIndex = runtime.findIndex((item) => item.id === record.id);
+
+  const updated = existingIndex >= 0 ? [...runtime] : [record, ...runtime];
+  if (existingIndex >= 0) updated[existingIndex] = record;
+
+  await writeRuntime(fileName, updated);
+  return record;
 };
 
-export const writeCustomerDb = async (records: CustomerRecord[]): Promise<void> => {
-  await ensureDirectoryExists(CUSTOMERS_JSON_PATH);
-  await writeFile(CUSTOMERS_JSON_PATH, JSON.stringify(records, null, 2), 'utf8');
-};
+export const readCustomerDb = async (): Promise<CustomerRecord[]> => readMerged<CustomerRecord>(CUSTOMERS_FILE);
 
-// Merchant Database Operations
-export const readMerchantDb = async (): Promise<MerchantRecord[]> => {
-  try {
-    const data = await readFile(MERCHANTS_JSON_PATH, 'utf8');
-    return JSON.parse(data) as MerchantRecord[];
-  } catch {
-    return [];
-  }
-};
+export const readMerchantDb = async (): Promise<MerchantRecord[]> => readMerged<MerchantRecord>(MERCHANTS_FILE);
 
-export const writeMerchantDb = async (records: MerchantRecord[]): Promise<void> => {
-  await ensureDirectoryExists(MERCHANTS_JSON_PATH);
-  await writeFile(MERCHANTS_JSON_PATH, JSON.stringify(records, null, 2), 'utf8');
+const findByContact = <Record extends { contact: string }>(records: Record[], contact: string) => {
+  const target = contact.trim().toLowerCase();
+  return records.find((item) => item.contact.trim().toLowerCase() === target);
 };
 
 /**
@@ -78,31 +111,13 @@ export const db = {
       return readCustomerDb();
     },
     async findById(id: string): Promise<CustomerRecord | undefined> {
-      const records = await readCustomerDb();
-      return records.find((item) => item.id === id);
+      return (await readCustomerDb()).find((item) => item.id === id);
     },
     async findByContact(contact: string): Promise<CustomerRecord | undefined> {
-      const records = await readCustomerDb();
-      const target = contact.trim().toLowerCase();
-      return records.find((item) => item.contact.trim().toLowerCase() === target);
+      return findByContact(await readCustomerDb(), contact);
     },
     async insert(record: Omit<CustomerRecord, 'role'>): Promise<CustomerRecord> {
-      const records = await readCustomerDb();
-      const newRecord: CustomerRecord = {
-        ...record,
-        role: 'customer'
-      };
-      // Prevent duplicate insert if ID exists, update instead
-      const existingIndex = records.findIndex((item) => item.id === record.id);
-      let updatedRecords: CustomerRecord[];
-      if (existingIndex >= 0) {
-        updatedRecords = [...records];
-        updatedRecords[existingIndex] = newRecord;
-      } else {
-        updatedRecords = [newRecord, ...records];
-      }
-      await writeCustomerDb(updatedRecords);
-      return newRecord;
+      return insertRuntime<CustomerRecord>(CUSTOMERS_FILE, { ...record, role: 'customer' });
     }
   },
   merchants: {
@@ -110,30 +125,13 @@ export const db = {
       return readMerchantDb();
     },
     async findById(id: string): Promise<MerchantRecord | undefined> {
-      const records = await readMerchantDb();
-      return records.find((item) => item.id === id);
+      return (await readMerchantDb()).find((item) => item.id === id);
     },
     async findByContact(contact: string): Promise<MerchantRecord | undefined> {
-      const records = await readMerchantDb();
-      const target = contact.trim().toLowerCase();
-      return records.find((item) => item.contact.trim().toLowerCase() === target);
+      return findByContact(await readMerchantDb(), contact);
     },
     async insert(record: Omit<MerchantRecord, 'role'>): Promise<MerchantRecord> {
-      const records = await readMerchantDb();
-      const newRecord: MerchantRecord = {
-        ...record,
-        role: 'merchant'
-      };
-      const existingIndex = records.findIndex((item) => item.id === record.id);
-      let updatedRecords: MerchantRecord[];
-      if (existingIndex >= 0) {
-        updatedRecords = [...records];
-        updatedRecords[existingIndex] = newRecord;
-      } else {
-        updatedRecords = [newRecord, ...records];
-      }
-      await writeMerchantDb(updatedRecords);
-      return newRecord;
+      return insertRuntime<MerchantRecord>(MERCHANTS_FILE, { ...record, role: 'merchant' });
     }
   }
 };
